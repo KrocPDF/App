@@ -137,8 +137,8 @@
 
 ## D-014: Splash Screen Hold Duration for Visual Verification & Animation Preparation
 - Date: 2026-10-28
-- Change: Added a 3-second initialization delay in `lib/main.dart` before `runApp()` and integrated a DOM `MutationObserver` with fade-out in `web/index.html` to remove the HTML splash screen once `<flutter-view>` is mounted.
-- Why: On fast developer workstations with local caching, Flutter engine boots in milliseconds, which causes the native/HTML splash screen to disappear before it can be visually verified. Holding for 3 seconds ensures the branding is clearly visible and establishes the timing window for upcoming custom splash animations.
+- Change: Added a 2-second initialization delay in `lib/main.dart` before `runApp()` and integrated a DOM `MutationObserver` with fade-out in `web/index.html` to remove the HTML splash screen once `<flutter-view>` is mounted.
+- Why: On fast developer workstations with local caching, Flutter engine boots in milliseconds, which causes the native/HTML splash screen to disappear before it can be visually verified. Holding for 2 seconds ensures the branding is clearly visible and establishes the timing window for upcoming custom splash animations.
 - Alternatives considered: Instant transition with zero delay. Rejected per developer request to observe and animate the splash screen.
-- Impact: Splash screen is visible for 3 seconds across both web preview and mobile platforms, followed by a smooth fade-out into the app.
+- Impact: Splash screen is visible for 2 seconds across both web preview and mobile platforms, followed by a smooth fade-out into the app.
 - Status: Accepted
