@@ -95,10 +95,30 @@
   </style>
   <script id="splash-screen-script">
     function removeSplashFromWeb() {
-      document.getElementById("splash")?.remove();
-      document.getElementById("splash-branding")?.remove();
-      document.body.style.background = "transparent";
+      const splash = document.getElementById("splash");
+      const branding = document.getElementById("splash-branding");
+      if (splash) {
+        splash.style.transition = "opacity 0.4s ease-out";
+        splash.style.opacity = "0";
+        setTimeout(() => {
+          splash.remove();
+          branding?.remove();
+          document.body.style.background = "transparent";
+        }, 400);
+      }
     }
+
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node.tagName === 'FLUTTER-VIEW') {
+            removeSplashFromWeb();
+            observer.disconnect();
+          }
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true });
   </script>
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
 </head>
