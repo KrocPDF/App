@@ -13,6 +13,7 @@
 | D-009 | Strict Local-Only Git Workflow (No-Push Policy) | Accepted | 2026-10-28 |
 | D-010 | Pinned Flutter SDK and Dart Toolchain Baseline | Accepted | 2026-10-28 |
 | D-011 | Format Parameter Passing via Route Query Parameters | Proposed | 2026-10-28 |
+| D-012 | Web Platform Target for Local Browser Preview in Brave | Accepted | 2026-10-28 |
 
 ---
 
@@ -114,3 +115,12 @@
 - Impact: Cleaner route definitions and simplified parsing in `tool_flow_screen.dart`.
 - Future impact: Additional tool parameters (e.g., quality, orientation) can be added as query parameters without altering route definitions.
 - Status: Proposed
+
+## D-012: Web Platform Target for Local Browser Preview in Brave
+- Date: 2026-10-28
+- Change: Added `web/` platform scaffolding and configured `CHROME_EXECUTABLE` pointing to Brave Browser (`C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe`).
+- Why: Enables immediate local interactive visual preview and debugging on the developer's workstation without requiring an Android emulator or hardware device.
+- Alternatives considered: Running headless tests only or installing an Android emulator. Rejected because interactive visual review was requested by the developer.
+- Impact: Fast browser-based development workflow with hot reload.
+- Future impact: Zero impact on Android/iOS build targets; all Flutter code remains completely cross-platform.
+- Status: Accepted
