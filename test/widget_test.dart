@@ -1,30 +1,29 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:krocpdf/main.dart';
+import 'package:krocpdf/app.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Home screen displays all 8 tool buttons and mode selector', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: KrocApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify app title and mode selector
+    expect(find.text('KrocPDF'), findsOneWidget);
+    expect(find.text('Confidential'), findsOneWidget);
+    expect(find.text('Non-Confidential'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify all 8 tool buttons are present
+    expect(find.text('Merge PDF'), findsOneWidget);
+    expect(find.text('Split PDF'), findsOneWidget);
+    expect(find.text('Compress PDF'), findsOneWidget);
+    expect(find.text('Lock PDF'), findsOneWidget);
+    expect(find.text('Unlock PDF'), findsOneWidget);
+    expect(find.text('Image Convert'), findsOneWidget);
+    expect(find.text('Image to PDF'), findsOneWidget);
+    expect(find.text('Office to PDF'), findsOneWidget);
   });
 }

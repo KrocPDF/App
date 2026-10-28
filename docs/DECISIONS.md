@@ -4,15 +4,15 @@
 |---|---|---|---|
 | D-001 | Feature-First Project Structure | Accepted | 2026-10-28 |
 | D-002 | Exact Dependency Version Pinning | Accepted | 2026-10-28 |
-| D-003 | Strict Monochrome Design System and Theme Overrides | Proposed | 2026-10-28 |
-| D-004 | Single Source of Truth for File Size Limits | Proposed | 2026-10-28 |
-| D-005 | Sealed Domain Error Hierarchy | Proposed | 2026-10-28 |
-| D-006 | Abstract Processing Service Contract | Proposed | 2026-10-28 |
+| D-003 | Strict Monochrome Design System and Theme Overrides | Accepted | 2026-10-28 |
+| D-004 | Single Source of Truth for File Size Limits | Accepted | 2026-10-28 |
+| D-005 | Sealed Domain Error Hierarchy | Accepted | 2026-10-28 |
+| D-006 | Abstract Processing Service Contract | Accepted | 2026-10-28 |
 | D-007 | Platform Baselines: Android SDK 24 and iOS 13 with Zero Production Permissions | Accepted | 2026-10-28 |
 | D-008 | State Management and Routing Choice: Riverpod and go_router | Accepted | 2026-10-28 |
 | D-009 | Strict Local-Only Git Workflow (No-Push Policy) | Accepted | 2026-10-28 |
 | D-010 | Pinned Flutter SDK and Dart Toolchain Baseline | Accepted | 2026-10-28 |
-| D-011 | Format Parameter Passing via Route Query Parameters | Proposed | 2026-10-28 |
+| D-011 | Format Parameter Passing via Route Query Parameters | Accepted | 2026-10-28 |
 | D-012 | Web Platform Target for Local Browser Preview in Brave | Accepted | 2026-10-28 |
 
 ---
@@ -42,7 +42,7 @@
 - Alternatives considered: Stock Material 3 color palettes or third-party UI component suites. Rejected to maintain a clean, human-designed aesthetic.
 - Impact: High-contrast light and dark modes with uniform spacing on an 8px grid.
 - Future impact: Low-overhead design system with minimal maintenance.
-- Status: Proposed
+- Status: Accepted
 
 ## D-004: Single Source of Truth for File Size Limits
 - Date: 2026-10-28
@@ -51,7 +51,7 @@
 - Alternatives considered: Hardcoding "100 MB" in UI widgets or calculating dynamic limits. Rejected as error-prone and brittle.
 - Impact: Settings and tool flow screens consume this single constant for validation and copy.
 - Future impact: Changing the local processing ceiling requires updating exactly one constant.
-- Status: Proposed
+- Status: Accepted
 
 ## D-005: Sealed Domain Error Hierarchy
 - Date: 2026-10-28
@@ -60,7 +60,7 @@
 - Alternatives considered: Generic `Exception` with string messages. Rejected due to lack of compile-time exhaustiveness.
 - Impact: Type-safe error handling across services and UI shells.
 - Future impact: Ready for integration with real file I/O and processing engines in Phase 2.
-- Status: Proposed
+- Status: Accepted
 
 ## D-006: Abstract Processing Service Contract
 - Date: 2026-10-28
@@ -69,7 +69,7 @@
 - Alternatives considered: Direct calls to local functions from UI controllers. Rejected because Phase 4 requires remote execution for Office conversion.
 - Impact: Clean dependency injection boundary using Riverpod providers.
 - Future impact: Phase 2 and Phase 4 provide concrete implementations to the existing interface.
-- Status: Proposed
+- Status: Accepted
 
 ## D-007: Platform Baselines: Android SDK 24 and iOS 13 with Zero Production Permissions
 - Date: 2026-10-28
@@ -114,7 +114,7 @@
 - Alternatives considered: Path segments (`/tool/:toolId/:format`). Rejected because some tools have a single default format or select formats within the flow.
 - Impact: Cleaner route definitions and simplified parsing in `tool_flow_screen.dart`.
 - Future impact: Additional tool parameters (e.g., quality, orientation) can be added as query parameters without altering route definitions.
-- Status: Proposed
+- Status: Accepted
 
 ## D-012: Web Platform Target for Local Browser Preview in Brave
 - Date: 2026-10-28
