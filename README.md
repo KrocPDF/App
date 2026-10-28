@@ -51,6 +51,12 @@ Launch on a connected Android device or emulator:
 flutter run
 ```
 
+### 5. Re-generating Native Splash Screen
+If the logo image or splash background colors are modified, update `flutter_native_splash.yaml` and regenerate the native Android & iOS splash assets:
+```bash
+dart run flutter_native_splash:create
+```
+
 ---
 
 ## Architectural Guidelines

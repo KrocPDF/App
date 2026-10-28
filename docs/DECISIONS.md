@@ -14,6 +14,7 @@
 | D-010 | Pinned Flutter SDK and Dart Toolchain Baseline | Accepted | 2026-10-28 |
 | D-011 | Format Parameter Passing via Route Query Parameters | Accepted | 2026-10-28 |
 | D-012 | Web Platform Target for Local Browser Preview in Brave | Accepted | 2026-10-28 |
+| D-013 | Native Splash Screen via Build-Time Dev Dependency | Accepted | 2026-10-28 |
 
 ---
 
@@ -123,4 +124,13 @@
 - Alternatives considered: Running headless tests only or installing an Android emulator. Rejected because interactive visual review was requested by the developer.
 - Impact: Fast browser-based development workflow with hot reload.
 - Future impact: Zero impact on Android/iOS build targets; all Flutter code remains completely cross-platform.
+- Status: Accepted
+
+## D-013: Native Splash Screen via Build-Time Dev Dependency
+- Date: 2026-10-28
+- Change: Added `flutter_native_splash: 2.4.8` to `dev_dependencies` in `pubspec.yaml`, created `flutter_native_splash.yaml` with monochrome light (`#FFFFFF` background, black logo) and dark (`#000000` background, white logo) configurations, generated native Android and iOS splash drawables and storyboards, and placed processed assets in `assets/splash/`.
+- Why: Native splash screens require platform-specific XML drawables, Android 12+ splash APIs, and iOS launch storyboards that Dart application code cannot produce. Using a dev-dependency ensures zero runtime packages or overhead are added to the final production application.
+- Alternatives considered: Hand-writing native Android XML drawables and iOS LaunchScreen.storyboard manually. Rejected as significantly slower and more prone to cross-device density scaling errors for a solo developer.
+- Impact: Clean native splash screen appears instantaneously on OS app launch before Flutter initializes. Retains natural splash duration (until the first frame renders) with zero artificial delays.
+- Future impact: Modifying the logo or background colors requires updating `flutter_native_splash.yaml` and re-running `dart run flutter_native_splash:create`. Documented in `README.md`.
 - Status: Accepted
