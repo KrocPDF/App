@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_limits.dart';
 import '../../home/domain/tool_item.dart';
 
@@ -91,7 +92,11 @@ class _ToolFlowScreenState extends State<ToolFlowScreen> {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: _buildStepContent(context, borderColor, isDark),
+                  child: Center(
+                    child: SingleChildScrollView(
+                      child: _buildStepContent(context, borderColor, isDark),
+                    ),
+                  ),
                 ),
               ),
 
@@ -178,14 +183,18 @@ class _ToolFlowScreenState extends State<ToolFlowScreen> {
         const SizedBox(height: 20),
         ElevatedButton(
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('File picker not implemented yet (Phase 2).'),
-                duration: Duration(seconds: 2),
-              ),
-            );
+            if (widget.toolId == 'image_to_pdf') {
+              context.push('/edit-document');
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('File picker not implemented yet (Phase 2).'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
           },
-          child: const Text('Choose files'),
+          child: Text(widget.toolId == 'image_to_pdf' ? 'Open Page Editor' : 'Choose files'),
         ),
       ],
     );

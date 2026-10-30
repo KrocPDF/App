@@ -61,7 +61,7 @@ class HomeScreen extends StatelessWidget {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 1.25,
+                  childAspectRatio: 1.05,
                 ),
                 itemBuilder: (context, index) {
                   final tool = ToolItem.allTools[index];

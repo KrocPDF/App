@@ -36,8 +36,10 @@ class ModeSelector extends ConsumerWidget {
                 child: Center(
                   child: Text(
                     'Confidential',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: activeMode == AppMode.confidential
                           ? (isDark ? Colors.black : Colors.white)
@@ -62,13 +64,18 @@ class ModeSelector extends ConsumerWidget {
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        'Non-Confidential',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: isDark ? Colors.white : Colors.black,
+                      Flexible(
+                        child: Text(
+                          'Non-Confidential',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 4),

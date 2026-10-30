@@ -28,72 +28,81 @@ class ToolGridItem extends StatelessWidget {
             border: Border.all(color: borderColor, width: 1),
             borderRadius: BorderRadius.circular(6),
           ),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 36,
-                    height: 36,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
                       border: Border.all(color: borderColor, width: 1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Icon(
                       tool.icon,
-                      size: 20,
+                      size: 18,
                       color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                   if (tool.requiresNonConfidential)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: borderColor, width: 0.5),
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                      child: Text(
-                        'Cloud Soon',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white60 : Colors.black54,
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: borderColor, width: 0.5),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          'Cloud Soon',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white60 : Colors.black54,
+                          ),
                         ),
                       ),
                     ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tool.title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.2,
+              const Spacer(),
+              Flexible(
+                flex: 0,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      tool.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    tool.requiresNonConfidential
-                        ? 'Needs Non-Confidential Mode (coming soon)'
-                        : tool.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      height: 1.3,
-                      color: isDark ? Colors.white60 : Colors.black54,
+                    const SizedBox(height: 3),
+                    Text(
+                      tool.requiresNonConfidential
+                          ? 'Cloud processing (coming soon)'
+                          : tool.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        height: 1.25,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

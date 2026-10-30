@@ -66,6 +66,10 @@
 			<string>UIInterfaceOrientationLandscapeLeft</string>
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
+		<key>NSCameraUsageDescription</key>
+		<string>We require camera access to scan documents locally on your device.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>We require photo library access to select images for PDF conversion.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
 	</dict>

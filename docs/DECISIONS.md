@@ -15,6 +15,9 @@
 | D-011 | Format Parameter Passing via Route Query Parameters | Accepted | 2026-10-28 |
 | D-012 | Web Platform Target for Local Browser Preview in Brave | Accepted | 2026-10-28 |
 | D-013 | Native Splash Screen via Build-Time Dev Dependency | Accepted | 2026-10-28 |
+| D-014 | Splash Screen Hold Duration for Visual Verification & Animation Preparation | Accepted | 2026-10-28 |
+| D-015 | Persistent Multi-Branch Navigation via StatefulShellRoute.indexedStack | Accepted | 2026-10-29 |
+| D-016 | Scan-to-PDF Pipeline and Shared Multi-Page Editing Toolbar | Accepted | 2026-10-29 |
 
 ---
 
@@ -141,4 +144,25 @@
 - Why: On fast developer workstations with local caching, Flutter engine boots in milliseconds, which causes the native/HTML splash screen to disappear before it can be visually verified. Holding for 2 seconds ensures the branding is clearly visible and establishes the timing window for upcoming custom splash animations.
 - Alternatives considered: Instant transition with zero delay. Rejected per developer request to observe and animate the splash screen.
 - Impact: Splash screen is visible for 2 seconds across both web preview and mobile platforms, followed by a smooth fade-out into the app.
+- Status: Accepted
+
+## D-015: Persistent Multi-Branch Navigation via StatefulShellRoute.indexedStack
+- Date: 2026-10-29
+- Change: Refactored navigation in `lib/app.dart` from top-level routes to `StatefulShellRoute.indexedStack` managing three stateful branches: Home (with nested tool flows), Scan, and Settings.
+- Why: Top-level routes caused the bottom navigation bar to unmount when pushing tool flows or opening Settings. `StatefulShellRoute.indexedStack` keeps the bottom navigation bar mounted across all screens, preserves navigation state across tabs, keeps the Home icon highlighted while browsing tool flows, and allows tapping "Home" with `initialLocation: true` to return directly to the root tool grid without requiring a hardware back button.
+- Alternatives considered: Separate top-level routes with duplicated bottom bars or basic `ShellRoute`. Rejected because basic `ShellRoute` destroys branch state and cannot push sub-routes within an isolated branch stack.
+- Zero New Files: All changes are contained within existing `lib/app.dart` and `docs/DECISIONS.md`. No new files or folders are created.
+- Status: Accepted
+
+## D-016: Scan-to-PDF Pipeline and Shared Multi-Page Editing Toolbar
+- Date: 2026-10-29
+- Change: Introduced camera document scanning via `cunning_document_scanner: 3.0.4`, on-device image adjustments (rotation, grayscale, B&W) via `image: 4.10.0`, manual cropping via `image_cropper: 12.2.1`, pure-Dart PDF compilation via `pdf: 3.13.1`, and local sandbox caching via `path_provider: 2.1.6`. Created a shared `DocumentEditorScreen` and `DocumentEditorNotifier` reused identically across the Scan flow and the Image-to-PDF tool flow.
+- Why:
+  1. Complete on-device Confidential Mode scanning: Provides fast, native multi-page document scanning with auto edge detection and perspective correction without sending any user data off-device.
+  2. Single Shared Component: Both camera scans and gallery image conversions require identical multi-page editing operations (crop, rotate, filter, reorder, delete, rename) and PDF generation. Consolidating into one shared `DocumentEditorScreen` eliminates code duplication, guarantees identical behavior, and enforces the "Discard scan?" back-button confirmation uniformly across both flows.
+  3. Scope Control: Excluded bloated Adobe Scan features (Magic Eraser, Cleanup clone stamp, Markup drawing, AI mode toggles, cloud OCR) to keep the app focused, lightweight, and strictly on-device.
+- Network Safety & Platform Details:
+  - Android: Google Play Services ML Kit Document Scanner executes inference strictly on-device. If the ML Kit Document Scanner native module is not already present on the device, Google Play Services may trigger a one-time dynamic component download on first invocation. Subsequent scans and all image processing execute completely offline. Document images, scanned pages, and user metadata are never transmitted over the network.
+  - Non-GMS Android Fallback: On Android devices without Google Play Services (e.g. de-googled ROMs, Huawei devices), the scanner initialization fails gracefully via `PlatformException` and displays a clear message directing the user to import pictures via the "Image to PDF" tool.
+  - iOS: Uses Apple's VisionKit (`VNDocumentCameraViewController`), which is built directly into iOS 13+ system binaries. Requires zero network downloads, zero dynamic modules, and makes zero network calls.
 - Status: Accepted

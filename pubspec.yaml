@@ -12,6 +12,17 @@ dependencies:
     sdk: flutter
   flutter_riverpod: 2.6.1
   go_router: 14.8.1
+  cunning_document_scanner: 3.0.4
+  image: 4.10.0
+  image_cropper: 12.2.1
+  pdf: 3.13.1
+  path_provider: 2.1.6
+  share_plus: ^13.3.1
+  printing: ^5.15.1
+  syncfusion_flutter_pdf: ^35.1.42
+  pdfrx: ^2.4.8
+  flutter_image_compress: ^2.5.1
+  permission_handler: 11.3.1
 
 dev_dependencies:
   flutter_test:
