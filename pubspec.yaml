@@ -23,6 +23,9 @@ dependencies:
   pdfrx: ^2.4.8
   flutter_image_compress: ^2.5.1
   permission_handler: 11.3.1
+  image_picker: ^1.2.4
+  file_picker: ^13.3.1
+  device_info_plus: ^13.3.0
 
 dev_dependencies:
   flutter_test:

@@ -40,20 +40,6 @@ class ToolItem {
       supportedFormats: ['PDF'],
     ),
     ToolItem(
-      id: 'lock_pdf',
-      title: 'Lock PDF',
-      description: 'Protect your PDF with a password.',
-      icon: Icons.lock_outlined,
-      supportedFormats: ['PDF'],
-    ),
-    ToolItem(
-      id: 'unlock_pdf',
-      title: 'Unlock PDF',
-      description: 'Remove password security from a PDF.',
-      icon: Icons.lock_open_outlined,
-      supportedFormats: ['PDF'],
-    ),
-    ToolItem(
       id: 'image_convert',
       title: 'Image Convert',
       description: 'Convert between popular image formats.',

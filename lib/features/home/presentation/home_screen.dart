@@ -1,16 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../domain/app_mode.dart';
 import '../domain/tool_item.dart';
 import 'widgets/mode_selector.dart';
 import 'widgets/tool_grid_item.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final activeMode = ref.watch(appModeProvider);
+
+    // In Confidential mode, completely filter out cloud-only tools like Office to PDF
+    final displayedTools = ToolItem.allTools.where((tool) {
+      if (activeMode == AppMode.confidential) {
+        return !tool.requiresNonConfidential;
+      }
+      return true;
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -44,7 +55,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '100% on-device',
+                    activeMode == AppMode.confidential ? '100% on-device' : 'Cloud enabled',
                     style: TextStyle(
                       fontSize: 11,
                       color: isDark ? Colors.white54 : Colors.black45,
@@ -56,7 +67,7 @@ class HomeScreen extends StatelessWidget {
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: ToolItem.allTools.length,
+                itemCount: displayedTools.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
@@ -64,7 +75,7 @@ class HomeScreen extends StatelessWidget {
                   childAspectRatio: 1.05,
                 ),
                 itemBuilder: (context, index) {
-                  final tool = ToolItem.allTools[index];
+                  final tool = displayedTools[index];
                   return ToolGridItem(
                     tool: tool,
                     onTap: () => context.push('/tool/${tool.id}'),

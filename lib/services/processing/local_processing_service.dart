@@ -11,6 +11,7 @@ import '../../core/errors/app_error.dart';
 import '../../core/result/result.dart';
 import '../../features/files/data/files_repository.dart';
 import '../../features/tool_flow/domain/scanned_document.dart';
+import '../image_conversion_service.dart';
 import 'processing_service.dart';
 
 class LocalProcessingService implements ProcessingService {
@@ -40,6 +41,27 @@ class LocalProcessingService implements ProcessingService {
         return Failure(ProcessingFailed(reason: 'Failed to create PDF: $e'));
       }
     }
+
+    if (request.toolId == 'image_convert') {
+      try {
+        if (request.filePaths.isEmpty) {
+          return const Failure(ProcessingFailed(reason: 'No input image provided for conversion.'));
+        }
+        final targetFormat = request.format ?? 'JPG';
+        const converter = ImageConversionService();
+        final result = await converter.convertImage(
+          inputPath: request.filePaths.first,
+          targetFormat: targetFormat,
+        );
+        return Success(ProcessingResult(
+          outputFilePath: result.outputPath,
+          message: 'Image converted to ${result.format} successfully.',
+        ));
+      } catch (e) {
+        return Failure(ProcessingFailed(reason: 'Failed to convert image: $e'));
+      }
+    }
+
     return const Failure(ProcessingFailed(reason: 'Local on-device processing not implemented yet.'));
   }
 

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
 import 'features/files/presentation/files_screen.dart';
+import 'features/files/presentation/pdf_viewer_screen.dart';
 import 'features/home/presentation/home_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/tool_flow/presentation/document_editor_screen.dart';
@@ -18,6 +19,14 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/pdf-viewer',
+      builder: (context, state) {
+        final filePath = state.uri.queryParameters['path'] ?? '';
+        final title = state.uri.queryParameters['title'] ?? 'Document';
+        return PdfViewerScreen(filePath: filePath, title: title);
+      },
     ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {

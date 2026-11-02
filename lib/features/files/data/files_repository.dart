@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 import '../domain/saved_document.dart';
 
 class FilesRepository {
@@ -42,17 +43,19 @@ class FilesRepository {
       }
     }
 
-    // Discover any unindexed or externally placed PDF files in the directory
+    // Discover any unindexed or externally placed files in the directory
     try {
       final entities = dir.listSync();
       for (final entity in entities) {
-        if (entity is File && entity.path.toLowerCase().endsWith('.pdf')) {
+        if (entity is File && !entity.path.endsWith(indexFileName)) {
           if (!indexedDocs.containsKey(entity.path)) {
             final stat = entity.statSync();
-            final fileName = entity.uri.pathSegments.last.replaceAll('.pdf', '');
+            final name = entity.uri.pathSegments.last;
+            final dotIdx = name.lastIndexOf('.');
+            final baseName = dotIdx > 0 ? name.substring(0, dotIdx) : name;
             indexedDocs[entity.path] = SavedDocument(
               id: 'doc_${DateTime.now().microsecondsSinceEpoch}',
-              title: fileName,
+              title: baseName,
               filePath: entity.path,
               fileSizeBytes: stat.size,
               createdAt: stat.modified,
@@ -124,12 +127,90 @@ class FilesRepository {
     return newDoc;
   }
 
+  Future<SavedDocument> addExternalFile(
+    File externalFile, {
+    String? customTitle,
+    SavedDocumentSource sourceType = SavedDocumentSource.importFile,
+  }) async {
+    final dir = await getStorageDirectory();
+
+    final extIndex = externalFile.path.lastIndexOf('.');
+    final ext = extIndex != -1 ? externalFile.path.substring(extIndex) : '.pdf';
+
+    // Derive base title from customTitle or the external file's name
+    String baseTitle;
+    if (customTitle != null && customTitle.trim().isNotEmpty) {
+      baseTitle = customTitle.trim();
+    } else {
+      final name = externalFile.uri.pathSegments.isNotEmpty
+          ? externalFile.uri.pathSegments.last
+          : 'Imported_File';
+      baseTitle = name;
+    }
+    // Remove extension if present at end for clean title
+    if (baseTitle.toLowerCase().endsWith(ext.toLowerCase())) {
+      baseTitle = baseTitle.substring(0, baseTitle.length - ext.length);
+    }
+    if (baseTitle.isEmpty) {
+      baseTitle = 'Imported_File';
+    }
+
+    // Duplicate-name handling
+    var destinationPath = '${dir.path}/$baseTitle$ext';
+    var counter = 1;
+    while (File(destinationPath).existsSync()) {
+      destinationPath = '${dir.path}/${baseTitle}_$counter$ext';
+      counter++;
+    }
+
+    // Copy imported file into KrocPDF_Documents
+    final copiedFile = await externalFile.copy(destinationPath);
+    final stat = await copiedFile.stat();
+
+    int pageCount = 1;
+    if (copiedFile.path.toLowerCase().endsWith('.pdf')) {
+      try {
+        final bytes = await copiedFile.readAsBytes();
+        final pdfDoc = PdfDocument(inputBytes: bytes);
+        pageCount = pdfDoc.pages.count;
+        pdfDoc.dispose();
+      } catch (_) {
+        pageCount = 1;
+      }
+    }
+
+    final finalFileName = destinationPath.split(Platform.pathSeparator).last;
+    final dotIndex = finalFileName.lastIndexOf('.');
+    final finalTitle = dotIndex > 0 ? finalFileName.substring(0, dotIndex) : finalFileName;
+
+    final newDoc = SavedDocument(
+      id: 'doc_${DateTime.now().microsecondsSinceEpoch}',
+      title: finalTitle,
+      filePath: copiedFile.path,
+      fileSizeBytes: stat.size,
+      createdAt: DateTime.now(),
+      pageCount: pageCount,
+      sourceType: sourceType,
+    );
+
+    final currentDocs = await loadDocuments();
+    final updatedList = [newDoc, ...currentDocs];
+    await _saveIndex(updatedList);
+    return newDoc;
+  }
+
   Future<SavedDocument?> renameDocument(SavedDocument doc, String newTitle) async {
-    final cleanTitle = newTitle.trim().replaceAll('.pdf', '');
+    final extIndex = doc.filePath.lastIndexOf('.');
+    final ext = extIndex != -1 ? doc.filePath.substring(extIndex) : '.pdf';
+
+    var cleanTitle = newTitle.trim();
+    if (cleanTitle.toLowerCase().endsWith(ext.toLowerCase())) {
+      cleanTitle = cleanTitle.substring(0, cleanTitle.length - ext.length);
+    }
     if (cleanTitle.isEmpty || cleanTitle == doc.title) return doc;
 
     final dir = await getStorageDirectory();
-    final newPath = '${dir.path}/$cleanTitle.pdf';
+    final newPath = '${dir.path}/$cleanTitle$ext';
 
     final oldFile = File(doc.filePath);
     if (!await oldFile.exists()) return null;
@@ -188,6 +269,20 @@ class SavedFilesNotifier extends StateNotifier<List<SavedDocument>> {
       pageCount: pageCount,
       sourceType: sourceType,
       originalPages: originalPages,
+    );
+    state = [doc, ...state.where((e) => e.id != doc.id)];
+    return doc;
+  }
+
+  Future<SavedDocument> addExternalFile(
+    File externalFile, {
+    String? customTitle,
+    SavedDocumentSource sourceType = SavedDocumentSource.importFile,
+  }) async {
+    final doc = await _repository.addExternalFile(
+      externalFile,
+      customTitle: customTitle,
+      sourceType: sourceType,
     );
     state = [doc, ...state.where((e) => e.id != doc.id)];
     return doc;

@@ -6,7 +6,7 @@ enum SavedDocumentSource {
   merge,
   split,
   compress,
-  lock,
+  importFile,
 }
 
 class SavedDocument {

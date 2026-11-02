@@ -2,12 +2,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/errors/app_error.dart';
+import '../../../core/result/result.dart';
+import '../../../core/utils/storage_permission_helper.dart';
+import '../../../services/file_validation_service.dart';
 import '../../tool_flow/presentation/document_editor_screen.dart';
 import '../data/files_repository.dart';
 import '../domain/saved_document.dart';
+import 'pdf_viewer_screen.dart';
 
 class FilesScreen extends ConsumerStatefulWidget {
   const FilesScreen({super.key});
@@ -40,6 +46,55 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
     }
   }
 
+  Future<void> _handleView(SavedDocument doc) async {
+    final file = File(doc.filePath);
+    if (!await file.exists()) {
+      _showFileNotFoundSnackBar();
+      ref.read(savedFilesProvider.notifier).checkExternalDeletions();
+      return;
+    }
+    if (doc.filePath.toLowerCase().endsWith('.pdf')) {
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => PdfViewerScreen(
+              filePath: doc.filePath,
+              title: doc.title,
+            ),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.all(16),
+            child: Stack(
+              alignment: Alignment.topRight,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    color: Colors.black,
+                    child: InteractiveViewer(
+                      child: Image.file(file, fit: BoxFit.contain),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _handleShare(SavedDocument doc) async {
     final file = File(doc.filePath);
     if (!await file.exists()) {
@@ -50,7 +105,6 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
     // ignore: deprecated_member_use
     await Share.shareXFiles(
       [XFile(doc.filePath)],
-      text: '${doc.title}.pdf',
     );
   }
 
@@ -98,7 +152,7 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Reopening compiled PDF "${doc.title}". You can re-lock, compress or convert it.',
+              'Reopening compiled PDF "${doc.title}". You can compress or convert it.',
             ),
             duration: const Duration(seconds: 3),
           ),
@@ -175,6 +229,70 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
     }
   }
 
+  Future<void> _handleImportFile() async {
+    final hasPermission = await StoragePermissionHelper.ensureStoragePermission();
+    if (!hasPermission) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Storage permission is required to import files.')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final picked = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+
+      if (picked == null || picked.path == null) {
+        return;
+      }
+
+      final file = File(picked.path!);
+      const validator = LocalFileValidationService();
+      final validation = validator.validateFile(file, allowedExtensions: ['pdf']);
+
+      if (validation is Failure<bool, AppError>) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(validation.error.message),
+              backgroundColor: Colors.red.shade700,
+            ),
+          );
+        }
+        return;
+      }
+
+      final originalName = picked.name;
+      final doc = await ref.read(savedFilesProvider.notifier).addExternalFile(
+            file,
+            customTitle: originalName,
+          );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Imported "${doc.title}.pdf" successfully'),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'View',
+              onPressed: () => _handleView(doc),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to import file: $e')),
+        );
+      }
+    }
+  }
+
   void _showFileNotFoundSnackBar() {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -205,6 +323,13 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
           const SizedBox(width: 8),
         ],
       ),
+      floatingActionButton: files.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: _handleImportFile,
+              icon: const Icon(Icons.add),
+              label: const Text('Import PDF'),
+            )
+          : null,
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 580),
@@ -247,12 +372,18 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Documents you scan, convert, or edit will appear here automatically on your device.',
+              'Documents you scan, import, or convert will appear here automatically on your device.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
                 color: isDark ? Colors.white70 : Colors.black87,
               ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _handleImportFile,
+              icon: const Icon(Icons.file_upload_outlined),
+              label: const Text('Import from Device'),
             ),
           ],
         ),
@@ -281,48 +412,71 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
         children: [
           Row(
             children: [
-              // PDF file icon with subtle amber touch
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F3F3),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: const Color(0xFFFF9500).withValues(alpha: 0.4),
-                    width: 1,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.picture_as_pdf_outlined,
-                  size: 20,
-                  color: Color(0xFFFF9500),
-                ),
-              ),
-              const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${doc.title}.pdf',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
-                      ),
+                child: InkWell(
+                  onTap: () => _handleView(doc),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        // File icon (PDF or Image)
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F3F3),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: doc.filePath.toLowerCase().endsWith('.pdf')
+                                  ? const Color(0xFFFF9500).withValues(alpha: 0.4)
+                                  : const Color(0xFF007AFF).withValues(alpha: 0.4),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            doc.filePath.toLowerCase().endsWith('.pdf')
+                                ? Icons.picture_as_pdf_outlined
+                                : Icons.image_outlined,
+                            size: 20,
+                            color: doc.filePath.toLowerCase().endsWith('.pdf')
+                                ? const Color(0xFFFF9500)
+                                : const Color(0xFF007AFF),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                doc.filePath.toLowerCase().endsWith('.pdf')
+                                    ? (doc.title.toLowerCase().endsWith('.pdf') ? doc.title : '${doc.title}.pdf')
+                                    : (doc.title.contains('.') ? doc.title : '${doc.title}${doc.filePath.substring(doc.filePath.lastIndexOf('.'))}'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                doc.filePath.toLowerCase().endsWith('.pdf')
+                                    ? '${doc.formattedSize} • ${doc.pageCount} ${doc.pageCount == 1 ? 'page' : 'pages'} • $formattedDate'
+                                    : '${doc.formattedSize} • ${doc.filePath.split('.').last.toUpperCase()} • $formattedDate',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? Colors.white54 : Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${doc.formattedSize} • ${doc.pageCount} ${doc.pageCount == 1 ? 'page' : 'pages'} • $formattedDate',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? Colors.white54 : Colors.black54,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               // Overflow popup menu for quick actions
@@ -331,6 +485,9 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
                 tooltip: 'File actions',
                 onSelected: (action) {
                   switch (action) {
+                    case 'view':
+                      _handleView(doc);
+                      break;
                     case 'share':
                       _handleShare(doc);
                       break;
@@ -349,6 +506,10 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
                   }
                 },
                 itemBuilder: (ctx) => [
+                  const PopupMenuItem(
+                    value: 'view',
+                    child: _ActionRow(icon: Icons.visibility_outlined, text: 'View'),
+                  ),
                   const PopupMenuItem(
                     value: 'share',
                     child: _ActionRow(icon: Icons.share_outlined, text: 'Share'),
@@ -384,6 +545,11 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
+              _QuickActionButton(
+                icon: Icons.visibility_outlined,
+                label: 'View',
+                onTap: () => _handleView(doc),
+              ),
               _QuickActionButton(
                 icon: Icons.share_outlined,
                 label: 'Share',

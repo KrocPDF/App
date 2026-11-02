@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:krocpdf/app.dart';
+import 'package:krocpdf/core/constants/app_limits.dart';
+import 'package:krocpdf/core/errors/app_error.dart';
+import 'package:krocpdf/core/result/result.dart';
+import 'package:krocpdf/features/home/domain/app_mode.dart';
 import 'package:krocpdf/features/tool_flow/presentation/document_editor_screen.dart';
+import 'package:krocpdf/services/file_validation_service.dart';
 
 void main() {
-  testWidgets('Home screen displays all 8 tool buttons and mode selector', (tester) async {
+  testWidgets('Home screen in Confidential mode displays only 5 on-device tools (excludes Office and Lock/Unlock)', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(
         child: KrocApp(),
@@ -18,15 +23,36 @@ void main() {
     expect(find.text('Confidential'), findsOneWidget);
     expect(find.text('Non-Confidential'), findsOneWidget);
 
-    // Verify all 8 tool buttons are present
+    // Verify the 5 on-device tools are present
     expect(find.text('Merge PDF'), findsOneWidget);
     expect(find.text('Split PDF'), findsOneWidget);
     expect(find.text('Compress PDF'), findsOneWidget);
-    expect(find.text('Lock PDF'), findsOneWidget);
-    expect(find.text('Unlock PDF'), findsOneWidget);
     expect(find.text('Image Convert'), findsOneWidget);
     expect(find.text('Image to PDF'), findsOneWidget);
+
+    // Verify Lock PDF and Unlock PDF are completely removed
+    expect(find.text('Lock PDF'), findsNothing);
+    expect(find.text('Unlock PDF'), findsNothing);
+
+    // Verify Office to PDF is hidden in Confidential mode
+    expect(find.text('Office to PDF'), findsNothing);
+  });
+
+  testWidgets('Home screen displays Office to PDF when switched to Non-Confidential mode', (tester) async {
+    final container = ProviderContainer();
+    container.read(appModeProvider.notifier).state = AppMode.nonConfidential;
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const KrocApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('Office to PDF'), findsOneWidget);
+    expect(find.text('Lock PDF'), findsNothing);
+    expect(find.text('Unlock PDF'), findsNothing);
   });
 
   testWidgets('Home screen renders without overflow on narrow mobile screens (360x640)', (tester) async {
@@ -130,5 +156,51 @@ void main() {
     await tester.tap(find.text('Rotate'));
     await tester.pumpAndSettle();
     expect(container.read(documentEditorProvider).currentPage?.rotationDegrees, equals(90));
+  });
+
+  testWidgets('Image Convert tool displays HEIC format option in ToolDetailScreen', (tester) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: KrocApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Image Convert'));
+    await tester.pumpAndSettle();
+
+    // Verify HEIC is listed as a selectable format option along with JPG, PNG, WEBP
+    expect(find.text('HEIC'), findsOneWidget);
+    expect(find.text('JPG'), findsOneWidget);
+    expect(find.text('PNG'), findsOneWidget);
+    expect(find.text('WEBP'), findsOneWidget);
+  });
+
+  test('FileValidationService correctly validates file size and extensions', () {
+    const validator = LocalFileValidationService();
+
+    // Size check
+    final validSize = validator.validateSizeBytes(50 * 1024 * 1024);
+    expect(validSize is Success, isTrue);
+
+    final oversized = validator.validateSizeBytes(AppLimits.maxLocalFileBytes + 1);
+    expect(oversized is Failure, isTrue);
+    expect((oversized as Failure).error, isA<FileTooLarge>());
+
+    // Extension check
+    final validPdf = validator.validateExtension('document.pdf', ['pdf']);
+    expect(validPdf is Success, isTrue);
+
+    final validHeic = validator.validateExtension('photo.HEIC', ['heic', 'jpg', 'png']);
+    expect(validHeic is Success, isTrue);
+
+    final invalidExe = validator.validateExtension('malicious.exe', ['pdf', 'jpg']);
+    expect(invalidExe is Failure, isTrue);
+    expect((invalidExe as Failure).error, isA<UnsupportedType>());
   });
 }
