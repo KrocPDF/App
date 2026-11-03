@@ -25,7 +25,7 @@ KrocPDF operates primarily in **Confidential Mode**:
 If you discover a security vulnerability within KrocPDF, please report it privately:
 
 1. **Do not open a public issue.**
-2. Send an email to the security team at **security@krocpdf.com** (or reach out via GitHub Private Vulnerability Reporting under the Security tab of the repository).
+2. Send an email to the security team at **security@krocpdf.com**.
 3. Include the following details:
    - Type of vulnerability (e.g., local storage data leakage, insecure permission escalation, dependency CVE).
    - Step-by-step reproduction instructions or a minimal Proof of Concept (PoC).
@@ -35,4 +35,3 @@ If you discover a security vulnerability within KrocPDF, please report it privat
 - **Initial Response:** Within 48 hours.
 - **Triage & Assessment:** Within 5 business days.
 - **Fix & Public Disclosure:** Coordinated release date once a remediation patch has been verified.
-

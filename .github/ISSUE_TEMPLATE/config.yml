@@ -1,9 +1,8 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
 contact_links:
-  - name: Community Discussions
-    url: https://github.com/KrocPDF/App/discussions
-    about: Ask questions, share ideas, and connect with other KrocPDF users and contributors.
+  - name: GitHub Issues
+    url: https://github.com/KrocPDF/App/issues/new/choose
+    about: Ask questions, file bug reports, or suggest enhancements.
   - name: Security Vulnerability Reporting
-    url: https://github.com/KrocPDF/App/security/policy
-    about: Privately disclose a security vulnerability.
-
+    url: mailto:security@krocpdf.com
+    about: Privately report a security vulnerability to the security team.

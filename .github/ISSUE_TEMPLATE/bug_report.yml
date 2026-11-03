@@ -1,7 +1,7 @@
 name: Bug Report
 description: File a bug or unexpected behavior in the KrocPDF Mobile app.
 title: "[Bug]: "
-labels: ["bug", "triage"]
+labels: ["bug"]
 body:
   - type: markdown
     attributes:
@@ -56,6 +56,7 @@ body:
     id: logs
     attributes:
       label: Logs / Stack Trace
-      description: Paste any error messages or flutter logs here.
+      description: |
+        Paste any error messages or flutter logs here.
+        Please remove local file paths, document names, and sensitive personal information before pasting.
       render: shell
-

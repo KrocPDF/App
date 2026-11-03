@@ -13,14 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub issue forms (`bug_report.yml`, `feature_request.yml`, `documentation.yml`, `config.yml`).
 - Structured pull request template (`PULL_REQUEST_TEMPLATE.md`).
 - Project planning and codebase intelligence architecture under `.planning/`.
-
-### Fixed
-- ML Kit document scanner with auto-capture and native file edit flows.
-
----
-
-## [1.0.0] - 2026-10-29
-### Added
 - Core Flutter application scaffolding with strict monochrome design system (Light & Dark modes).
 - Confidential Mode (100% on-device local document processing up to 100 MB).
 - Declarative routing with `go_router` and persistent shell navigation.
@@ -29,3 +21,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local persistent file management (save, view, share, print, and delete).
 - Native splash screens with official KrocPDF branding.
 
+### Fixed
+- ML Kit document scanner with auto-capture and native file edit flows.

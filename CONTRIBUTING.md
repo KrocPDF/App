@@ -16,7 +16,7 @@ To ensure deterministic builds and parity with our CI pipeline:
 - **Flutter SDK:** `3.44.6` (channel stable)
 - **Dart SDK:** `3.12.2`
 - **Java:** JDK 17 (Zulu distribution recommended)
-- **Android Target:** `minSdk = 24`, `targetSdk = 35`
+- **Android Target:** `minSdk = 24`, `targetSdk = 36`
 
 Check your local environment:
 ```bash
@@ -88,8 +88,7 @@ Before writing code, please review [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md
 
 Before submitting your PR, ensure:
 - [ ] Code is formatted with `dart format .`.
-- [ ] `flutter analyze` reports zero errors, warnings, or infos.
+- [ ] `flutter analyze --fatal-infos` passes locally with zero issues.
 - [ ] All unit and widget tests in `test/` pass cleanly.
 - [ ] New functionality is covered with unit/widget tests.
 - [ ] Any architectural changes are documented in `docs/DECISIONS.md`.
-
