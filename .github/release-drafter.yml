@@ -45,3 +45,4 @@ template: |
   $CHANGES
 
   **Full Changelog**: https://github.com/KrocPDF/App/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+

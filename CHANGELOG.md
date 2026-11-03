@@ -28,3 +28,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Image conversion pipeline supporting JPG, PNG, HEIC, and WEBP formats.
 - Local persistent file management (save, view, share, print, and delete).
 - Native splash screens with official KrocPDF branding.
+
