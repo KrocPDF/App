@@ -20,12 +20,14 @@ class ToolFlowScreen extends ConsumerStatefulWidget {
   final String toolId;
   final String? format;
   final int initialStepIndex;
+  final String? initialFilePath;
 
   const ToolFlowScreen({
     super.key,
     required this.toolId,
     this.format,
     this.initialStepIndex = 0,
+    this.initialFilePath,
   });
 
   @override
@@ -68,6 +70,26 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       _targetFormat = requested;
     } else {
       _targetFormat = 'JPG';
+    }
+
+    final initialPath = widget.initialFilePath;
+    if (initialPath != null && initialPath.isNotEmpty) {
+      final file = File(initialPath);
+      if (file.existsSync()) {
+        if (_isImageConvert) {
+          _selectedImagePath = file.path;
+          final fileName = file.path.split(Platform.pathSeparator).last.split('/').last;
+          final parts = fileName.split('.');
+          _sourceFormat = parts.length > 1 ? parts.last.toUpperCase() : 'JPG';
+          _sourceFileSizeBytes = file.lengthSync();
+          _currentStepIndex = 1;
+        } else {
+          _selectedFiles.add(file);
+          if (widget.toolId != 'merge_pdf') {
+            _currentStepIndex = 1;
+          }
+        }
+      }
     }
   }
 

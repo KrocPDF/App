@@ -132,13 +132,13 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
 
   Future<void> _handleEdit(SavedDocument doc) async {
     final file = File(doc.filePath);
-    if (!await file.exists()) {
+    if (!file.existsSync()) {
       _showFileNotFoundSnackBar();
       ref.read(savedFilesProvider.notifier).checkExternalDeletions();
       return;
     }
 
-    // If document has original scan pages captured, reopen them in the editor for re-cropping & filters
+    // Case 1: Raw scan pages captured in app -> reopen in editor for re-cropping & filters
     if (doc.originalPagePaths.isNotEmpty) {
       ref.read(documentEditorProvider.notifier).init(
             doc.originalPagePaths,
@@ -147,18 +147,135 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
       if (mounted) {
         context.push('/edit-document');
       }
-    } else {
+      return;
+    }
+
+    // Case 2: Single image file -> preload into document editor for cropping, rotating & filters
+    final lower = doc.filePath.toLowerCase();
+    final isImage = lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.heic') ||
+        lower.endsWith('.heif');
+
+    if (isImage) {
+      ref.read(documentEditorProvider.notifier).init(
+            [doc.filePath],
+            title: doc.title,
+          );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Reopening compiled PDF "${doc.title}". You can compress or convert it.',
+        context.push('/edit-document');
+      }
+      return;
+    }
+
+    // Case 3: Compiled PDF -> open tool action sheet (Compress, Split, Merge)
+    if (mounted) {
+      _showPdfEditActionSheet(doc);
+    }
+  }
+
+  void _showPdfEditActionSheet(SavedDocument doc) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = theme.colorScheme.outline;
+
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF262626) : const Color(0xFFEEEEEE),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.picture_as_pdf, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              doc.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${doc.pageCount} ${doc.pageCount == 1 ? 'page' : 'pages'} • ${doc.formattedSize}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? Colors.white60 : Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(color: borderColor, height: 1),
+                const SizedBox(height: 6),
+                ListTile(
+                  leading: const Icon(Icons.compress_outlined),
+                  title: const Text('Compress PDF'),
+                  subtitle: const Text('Reduce file size with compression settings'),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    final encoded = Uri.encodeComponent(doc.filePath);
+                    context.push('/tool/compress_pdf/flow?initialFilePath=$encoded');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.call_split_outlined),
+                  title: const Text('Split PDF'),
+                  subtitle: const Text('Extract or separate pages from this document'),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    final encoded = Uri.encodeComponent(doc.filePath);
+                    context.push('/tool/split_pdf/flow?initialFilePath=$encoded');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.call_merge_outlined),
+                  title: const Text('Merge with Another PDF'),
+                  subtitle: const Text('Combine this PDF with additional documents'),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    final encoded = Uri.encodeComponent(doc.filePath);
+                    context.push('/tool/merge_pdf/flow?initialFilePath=$encoded');
+                  },
+                ),
+              ],
             ),
-            duration: const Duration(seconds: 3),
           ),
         );
-      }
-    }
+      },
+    );
   }
 
   Future<void> _handleRename(SavedDocument doc) async {

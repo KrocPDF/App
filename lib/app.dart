@@ -56,7 +56,12 @@ final GoRouter _router = GoRouter(
                       builder: (context, state) {
                         final toolId = state.pathParameters['toolId'] ?? '';
                         final format = state.uri.queryParameters['format'];
-                        return ToolFlowScreen(toolId: toolId, format: format);
+                        final initialFilePath = state.uri.queryParameters['initialFilePath'];
+                        return ToolFlowScreen(
+                          toolId: toolId,
+                          format: format,
+                          initialFilePath: initialFilePath,
+                        );
                       },
                     ),
                   ],
@@ -109,7 +114,10 @@ class KrocApp extends StatelessWidget {
 /// Helper to launch camera scanner with graceful error handling
 Future<void> launchDocumentScanner(BuildContext context, WidgetRef ref) async {
   try {
-    final pictures = await CunningDocumentScanner.getPictures();
+    final pictures = await CunningDocumentScanner.getPictures(
+      androidScannerMode: AndroidScannerMode.full,
+      scannerSource: ScannerSource.camera,
+    );
     if (pictures != null && pictures.isNotEmpty && context.mounted) {
       ref.read(documentEditorProvider.notifier).init(pictures);
       context.push('/edit-document');

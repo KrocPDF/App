@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:krocpdf/features/files/data/files_repository.dart';
 import 'package:krocpdf/features/files/domain/saved_document.dart';
 import 'package:krocpdf/features/files/presentation/files_screen.dart';
+import 'package:krocpdf/features/tool_flow/presentation/tool_flow_screen.dart';
 
 void main() {
   testWidgets('FilesScreen shows empty state with Import button and no AppBar Import action or FAB when empty', (tester) async {
@@ -62,6 +63,70 @@ void main() {
     // Verify FAB is present
     expect(find.byType(FloatingActionButton), findsOneWidget);
     expect(find.text('Import PDF'), findsOneWidget);
+  });
+
+  testWidgets('Tapping Edit on a compiled PDF opens Edit PDF action sheet with tool options', (tester) async {
+    final tempDir = Directory.systemTemp.createTempSync('kroc_test_');
+    final tempFile = File('${tempDir.path}/TestDoc.pdf')..writeAsStringSync('dummy content');
+
+    final fakeDoc = SavedDocument(
+      id: 'doc_edit_test',
+      title: 'TestDoc',
+      filePath: tempFile.path,
+      fileSizeBytes: 1024,
+      createdAt: DateTime.now(),
+      pageCount: 3,
+      sourceType: SavedDocumentSource.importFile,
+      originalPagePaths: const [],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          savedFilesProvider.overrideWith((ref) => FakeSavedFilesNotifier([fakeDoc])),
+        ],
+        child: const MaterialApp(
+          home: FilesScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Find and tap the Edit quick action button on the card
+    final editButton = find.text('Edit');
+    expect(editButton, findsOneWidget);
+    await tester.tap(editButton);
+    await tester.pumpAndSettle();
+
+    // Verify Edit PDF action sheet is displayed with tool options
+    expect(find.text('Compress PDF'), findsOneWidget);
+    expect(find.text('Split PDF'), findsOneWidget);
+    expect(find.text('Merge with Another PDF'), findsOneWidget);
+
+    tempDir.deleteSync(recursive: true);
+  });
+
+  testWidgets('ToolFlowScreen with initialFilePath preloads file and advances to Step 1', (tester) async {
+    final tempDir = Directory.systemTemp.createTempSync('kroc_flow_test_');
+    final tempFile = File('${tempDir.path}/DocToCompress.pdf')..writeAsStringSync('sample pdf');
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: ToolFlowScreen(
+            toolId: 'compress_pdf',
+            initialFilePath: tempFile.path,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Options step should be displayed directly
+    expect(find.text('Options'), findsWidgets);
+    expect(find.text('Compress PDF'), findsOneWidget);
+
+    tempDir.deleteSync(recursive: true);
   });
 }
 
