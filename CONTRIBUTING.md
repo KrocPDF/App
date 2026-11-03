@@ -92,3 +92,4 @@ Before submitting your PR, ensure:
 - [ ] All unit and widget tests in `test/` pass cleanly.
 - [ ] New functionality is covered with unit/widget tests.
 - [ ] Any architectural changes are documented in `docs/DECISIONS.md`.
+

@@ -1,0 +1,29 @@
+name: Documentation Update
+description: Propose improvements, additions, or fixes to KrocPDF documentation.
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping keep our documentation accurate and up-to-date!
+  - type: textarea
+    id: docs-location
+    attributes:
+      label: Which document needs changes?
+      description: File paths (e.g. `README.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `CONTRIBUTING.md`).
+      placeholder: docs/ARCHITECTURE.md
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description of the Problem / Proposed Improvement
+      description: Explain what is missing, outdated, or confusing.
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-content
+    attributes:
+      label: Suggested Content or Diff
+      description: If you have draft text or diffs ready, provide them here.

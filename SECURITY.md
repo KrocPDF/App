@@ -35,3 +35,4 @@ If you discover a security vulnerability within KrocPDF, please report it privat
 - **Initial Response:** Within 48 hours.
 - **Triage & Assessment:** Within 5 business days.
 - **Fix & Public Disclosure:** Coordinated release date once a remediation patch has been verified.
+

@@ -2,6 +2,7 @@ name: PR Verification & Quality Gates
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
     branches: [ main ]
   push:
     branches-ignore: [ main ]
@@ -11,6 +12,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  release-notes-check:
+    name: Check Release Notes & Changelog
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify Release Notes / Changelog or Skip Label
+        env:
+          PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          echo "Checking for changelog / release notes requirements..."
+          
+          # Check if PR has a skip label (e.g. skip-changelog, no-release-notes, dependencies)
+          if echo "$PR_LABELS" | grep -Eq '"(skip-changelog|no-release-notes|dependencies|chore)"'; then
+            echo "✅ PR has a changelog skip label. Skipping release notes check."
+            exit 0
+          fi
+
+          # Check if CHANGELOG.md is modified in this PR
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          if echo "$CHANGED_FILES" | grep -q "^CHANGELOG.md"; then
+            echo "✅ CHANGELOG.md has been updated in this pull request."
+            exit 0
+          fi
+
+          # Check if PR body contains a non-empty Release Notes section
+          if echo "$PR_BODY" | grep -qi "## Release Notes" && ! echo "$PR_BODY" | grep -qi "## Release Notes.*<!--"; then
+            echo "✅ PR description includes a dedicated Release Notes section."
+            exit 0
+          fi
+
+          echo "::error::❌ No release notes found! Please update CHANGELOG.md under [Unreleased], fill out the 'Release Notes' section in your PR description, or add the 'skip-changelog' label."
+          exit 1
+
   code-quality:
     name: Flutter Code Quality & Tests
     runs-on: ubuntu-latest

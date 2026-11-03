@@ -58,3 +58,4 @@ body:
       label: Logs / Stack Trace
       description: Paste any error messages or flutter logs here.
       render: shell
+
