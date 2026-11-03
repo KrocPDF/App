@@ -19,11 +19,13 @@ import '../../home/domain/tool_item.dart';
 class ToolFlowScreen extends ConsumerStatefulWidget {
   final String toolId;
   final String? format;
+  final int initialStepIndex;
 
   const ToolFlowScreen({
     super.key,
     required this.toolId,
     this.format,
+    this.initialStepIndex = 0,
   });
 
   @override
@@ -31,7 +33,7 @@ class ToolFlowScreen extends ConsumerStatefulWidget {
 }
 
 class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
-  int _currentStepIndex = 0;
+  late int _currentStepIndex;
 
   static const List<String> _steps = [
     'Select files',
@@ -60,6 +62,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
   @override
   void initState() {
     super.initState();
+    _currentStepIndex = widget.initialStepIndex;
     final requested = widget.format?.trim().toUpperCase();
     if (requested != null && ImageConversionService.supportedOutputFormats.contains(requested)) {
       _targetFormat = requested;
@@ -1014,6 +1017,18 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
             );
           }).toList(),
         ),
+        if (_targetFormat == 'PNG' || _targetFormat == 'WEBP') ...[
+          const SizedBox(height: 10),
+          Text(
+            _targetFormat == 'PNG'
+                ? 'PNG is lossless — output may be larger than the original file.'
+                : 'WEBP output may be larger than the original file.',
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         if (_targetFormat != 'PNG') ...[
           Row(

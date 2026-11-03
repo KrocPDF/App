@@ -7,6 +7,7 @@ import 'package:krocpdf/core/errors/app_error.dart';
 import 'package:krocpdf/core/result/result.dart';
 import 'package:krocpdf/features/home/domain/app_mode.dart';
 import 'package:krocpdf/features/tool_flow/presentation/document_editor_screen.dart';
+import 'package:krocpdf/features/tool_flow/presentation/tool_flow_screen.dart';
 import 'package:krocpdf/services/file_validation_service.dart';
 
 void main() {
@@ -179,6 +180,62 @@ void main() {
     expect(find.text('JPG'), findsOneWidget);
     expect(find.text('PNG'), findsOneWidget);
     expect(find.text('WEBP'), findsOneWidget);
+  });
+
+  testWidgets('Image Convert options shows lossless size note for PNG and WEBP, hides for JPG and HEIC', (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: ToolFlowScreen(
+            toolId: 'image_convert',
+            format: 'JPG',
+            initialStepIndex: 1,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    const pngNote = 'PNG is lossless — output may be larger than the original file.';
+    const webpNote = 'WEBP output may be larger than the original file.';
+
+    // Default target format is JPG: no lossless size note, quality slider visible
+    expect(find.text(pngNote), findsNothing);
+    expect(find.text(webpNote), findsNothing);
+    expect(find.text('Compression Quality'), findsOneWidget);
+
+    // Select PNG: lossless note appears, quality slider hidden
+    await tester.tap(find.widgetWithText(ChoiceChip, 'PNG'));
+    await tester.pumpAndSettle();
+    expect(find.text(pngNote), findsOneWidget);
+    expect(find.text(webpNote), findsNothing);
+    expect(find.text('Compression Quality'), findsNothing);
+
+    // Select WEBP: WEBP size note appears, quality slider visible
+    await tester.tap(find.widgetWithText(ChoiceChip, 'WEBP'));
+    await tester.pumpAndSettle();
+    expect(find.text(pngNote), findsNothing);
+    expect(find.text(webpNote), findsOneWidget);
+    expect(find.text('Compression Quality'), findsOneWidget);
+
+    // Select HEIC: size note hidden, quality slider visible
+    await tester.tap(find.widgetWithText(ChoiceChip, 'HEIC'));
+    await tester.pumpAndSettle();
+    expect(find.text(pngNote), findsNothing);
+    expect(find.text(webpNote), findsNothing);
+    expect(find.text('Compression Quality'), findsOneWidget);
+
+    // Select JPG: size note hidden, quality slider visible
+    await tester.tap(find.widgetWithText(ChoiceChip, 'JPG'));
+    await tester.pumpAndSettle();
+    expect(find.text(pngNote), findsNothing);
+    expect(find.text(webpNote), findsNothing);
+    expect(find.text('Compression Quality'), findsOneWidget);
   });
 
   test('FileValidationService correctly validates file size and extensions', () {
