@@ -1,0 +1,9 @@
+{
+  "project_name": "KrocPDF App",
+  "version": "1.0.0",
+  "workflow": {
+    "git_mode": "branch_pr",
+    "parallel_subagents": false
+  }
+}
+
