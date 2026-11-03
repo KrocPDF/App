@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:printing/printing.dart';
@@ -33,39 +34,31 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     final file = File(widget.filePath);
     if (!await file.exists()) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('File not found.')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('File not found.')));
       }
       return;
     }
     // ignore: deprecated_member_use
-    await Share.shareXFiles(
-      [XFile(widget.filePath)],
-    );
+    await Share.shareXFiles([XFile(widget.filePath)]);
   }
 
   Future<void> _handlePrint() async {
     final file = File(widget.filePath);
     if (!await file.exists()) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('File not found.')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('File not found.')));
       }
       return;
     }
     try {
       final bytes = await file.readAsBytes();
-      await Printing.layoutPdf(
-        onLayout: (_) => bytes,
-        name: widget.title,
-      );
+      await Printing.layoutPdf(onLayout: (_) => bytes, name: widget.title);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Print failed: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Print failed: $e')));
       }
     }
   }
@@ -82,9 +75,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
     if (!file.existsSync()) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(displayTitle),
-        ),
+        appBar: AppBar(title: Text(displayTitle)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -161,45 +152,62 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         widget.filePath,
         controller: _pdfController,
         params: PdfViewerParams(
-          backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFEBEBEB),
-          loadingBannerBuilder: (context, bytesDownloaded, totalBytes) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(
-                  color: isDark ? Colors.white : Colors.black,
-                  strokeWidth: 2.5,
+          backgroundColor: isDark
+              ? const Color(0xFF121212)
+              : const Color(0xFFEBEBEB),
+          loadingBannerBuilder: (context, bytesDownloaded, totalBytes) =>
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      color: isDark ? Colors.white : Colors.black,
+                      strokeWidth: 2.5,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Loading document...',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Loading document...',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ),
-          errorBannerBuilder: (context, error, stackTrace, documentRef) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.broken_image_outlined, size: 44, color: Colors.redAccent),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Failed to render PDF',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '$error',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
               ),
-            ),
-          ),
+          errorBannerBuilder: (context, error, stackTrace, documentRef) =>
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.broken_image_outlined,
+                        size: 44,
+                        color: Colors.redAccent,
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Failed to render PDF',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '$error',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           onViewerReady: (document, controller) {
             if (mounted) {
               setState(() {

@@ -18,7 +18,8 @@ final class FileTooLarge extends AppError {
   });
 
   @override
-  String get message => 'This file is larger than ${AppLimits.formattedLimitMb}.';
+  String get message =>
+      'This file is larger than ${AppLimits.formattedLimitMb}.';
 }
 
 final class UnsupportedType extends AppError {
@@ -42,7 +43,9 @@ final class InsufficientStorage extends AppError {
 final class ProcessingFailed extends AppError {
   final String reason;
 
-  const ProcessingFailed({this.reason = 'An unexpected error occurred during processing.'});
+  const ProcessingFailed({
+    this.reason = 'An unexpected error occurred during processing.',
+  });
 
   @override
   String get message => reason;

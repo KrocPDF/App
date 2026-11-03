@@ -4,10 +4,7 @@ import 'package:krocpdf/features/tool_flow/domain/scanned_document.dart';
 void main() {
   group('ScannedPage Model', () {
     test('initializes with default values and paths', () {
-      const page = ScannedPage(
-        id: 'page_1',
-        originalPath: '/data/scan_1.jpg',
-      );
+      const page = ScannedPage(id: 'page_1', originalPath: '/data/scan_1.jpg');
 
       expect(page.id, equals('page_1'));
       expect(page.originalPath, equals('/data/scan_1.jpg'));
@@ -81,7 +78,10 @@ void main() {
 
       // Move page 0 to index 2
       final reordered = state.reorderPages(0, 3);
-      expect(reordered.pages.map((p) => p.id).toList(), equals(['2', '3', '1']));
+      expect(
+        reordered.pages.map((p) => p.id).toList(),
+        equals(['2', '3', '1']),
+      );
       expect(reordered.selectedPageIndex, equals(2));
     });
 
@@ -102,9 +102,7 @@ void main() {
     });
 
     test('renames document title', () {
-      const state = DocumentEditorState(
-        documentTitle: 'Old Title',
-      );
+      const state = DocumentEditorState(documentTitle: 'Old Title');
 
       final renamed = state.copyWith(documentTitle: 'New Title');
       expect(renamed.documentTitle, equals('New Title'));

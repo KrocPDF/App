@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/constants/app_limits.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -11,9 +12,7 @@ class SettingsScreen extends StatelessWidget {
     final borderColor = theme.colorScheme.outline;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 580),

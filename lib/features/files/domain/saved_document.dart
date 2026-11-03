@@ -1,13 +1,6 @@
 import 'dart:io';
 
-enum SavedDocumentSource {
-  scan,
-  convert,
-  merge,
-  split,
-  compress,
-  importFile,
-}
+enum SavedDocumentSource { scan, convert, merge, split, compress, importFile }
 
 class SavedDocument {
   final String id;
@@ -82,13 +75,16 @@ class SavedDocument {
       title: json['title'] as String,
       filePath: json['filePath'] as String,
       fileSizeBytes: json['fileSizeBytes'] as int? ?? 0,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
       pageCount: json['pageCount'] as int? ?? 1,
       sourceType: SavedDocumentSource.values.firstWhere(
         (e) => e.name == json['sourceType'],
         orElse: () => SavedDocumentSource.scan,
       ),
-      originalPagePaths: (json['originalPagePaths'] as List<dynamic>?)
+      originalPagePaths:
+          (json['originalPagePaths'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],

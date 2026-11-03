@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
+
 import '../features/files/data/files_repository.dart';
 
 class ConvertedImageResult {
@@ -107,19 +109,26 @@ class ImageConversionService {
 
     // Prepare output directory in KrocPDF_Documents folder
     final appDocsDir = await getApplicationDocumentsDirectory();
-    final outputDir = Directory('${appDocsDir.path}/${FilesRepository.documentsFolder}');
+    final outputDir = Directory(
+      '${appDocsDir.path}/${FilesRepository.documentsFolder}',
+    );
     if (!await outputDir.exists()) {
       await outputDir.create(recursive: true);
     }
 
-    final originalBaseName = inputPath.split(Platform.pathSeparator).last.split('/').last;
+    final originalBaseName = inputPath
+        .split(Platform.pathSeparator)
+        .last
+        .split('/')
+        .last;
     final dotIndex = originalBaseName.lastIndexOf('.');
     final baseNameWithoutExt = dotIndex > 0
         ? originalBaseName.substring(0, dotIndex)
         : originalBaseName;
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final targetPath = '${outputDir.path}/${baseNameWithoutExt}_converted_$timestamp.$targetExt';
+    final targetPath =
+        '${outputDir.path}/${baseNameWithoutExt}_converted_$timestamp.$targetExt';
 
     // 1. Primary path: Use native platform image compression/decoding
     XFile? resultFile;
@@ -135,7 +144,9 @@ class ImageConversionService {
     }
 
     // 2. Fallback path: If platform conversion returned null and it's not HEIC, try Dart package:image
-    if (resultFile == null && !isHeic(inputPath) && normalizedTarget != 'HEIC') {
+    if (resultFile == null &&
+        !isHeic(inputPath) &&
+        normalizedTarget != 'HEIC') {
       try {
         final bytes = await inputFile.readAsBytes();
         final decoded = img.decodeImage(bytes);

@@ -1,12 +1,19 @@
 import 'dart:io';
+
 import '../core/constants/app_limits.dart';
 import '../core/errors/app_error.dart';
 import '../core/result/result.dart';
 
 abstract class FileValidationService {
   Result<bool, AppError> validateSizeBytes(int bytes);
-  Result<bool, AppError> validateExtension(String filePath, List<String> allowedExtensions);
-  Result<bool, AppError> validateFile(File file, {List<String>? allowedExtensions});
+  Result<bool, AppError> validateExtension(
+    String filePath,
+    List<String> allowedExtensions,
+  );
+  Result<bool, AppError> validateFile(
+    File file, {
+    List<String>? allowedExtensions,
+  });
 }
 
 class LocalFileValidationService implements FileValidationService {
@@ -21,7 +28,10 @@ class LocalFileValidationService implements FileValidationService {
   }
 
   @override
-  Result<bool, AppError> validateExtension(String filePath, List<String> allowedExtensions) {
+  Result<bool, AppError> validateExtension(
+    String filePath,
+    List<String> allowedExtensions,
+  ) {
     final normalizedAllowed = allowedExtensions
         .map((e) => e.toLowerCase().replaceAll('.', ''))
         .toSet();
@@ -31,15 +41,22 @@ class LocalFileValidationService implements FileValidationService {
         : '';
 
     if (ext.isEmpty || !normalizedAllowed.contains(ext)) {
-      return Failure(UnsupportedType(fileExtension: ext.isNotEmpty ? ext : 'unknown'));
+      return Failure(
+        UnsupportedType(fileExtension: ext.isNotEmpty ? ext : 'unknown'),
+      );
     }
     return const Success(true);
   }
 
   @override
-  Result<bool, AppError> validateFile(File file, {List<String>? allowedExtensions}) {
+  Result<bool, AppError> validateFile(
+    File file, {
+    List<String>? allowedExtensions,
+  }) {
     if (!file.existsSync()) {
-      return const Failure(ProcessingFailed(reason: 'Selected file does not exist.'));
+      return const Failure(
+        ProcessingFailed(reason: 'Selected file does not exist.'),
+      );
     }
 
     if (allowedExtensions != null && allowedExtensions.isNotEmpty) {

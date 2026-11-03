@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
+
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
@@ -18,14 +19,13 @@ class LocalProcessingService implements ProcessingService {
   const LocalProcessingService();
 
   @override
-  Future<Result<ProcessingResult, AppError>> process(ProcessingRequest request) async {
+  Future<Result<ProcessingResult, AppError>> process(
+    ProcessingRequest request,
+  ) async {
     if (request.toolId == 'image_to_pdf' || request.toolId == 'scan_to_pdf') {
       try {
         final pages = request.filePaths.asMap().entries.map((e) {
-          return ScannedPage(
-            id: 'page_${e.key}',
-            originalPath: e.value,
-          );
+          return ScannedPage(id: 'page_${e.key}', originalPath: e.value);
         }).toList();
 
         final outputPath = await compilePagesToPdf(
@@ -33,10 +33,12 @@ class LocalProcessingService implements ProcessingService {
           outputFileName: 'output.pdf',
         );
 
-        return Success(ProcessingResult(
-          outputFilePath: outputPath,
-          message: 'PDF generated successfully.',
-        ));
+        return Success(
+          ProcessingResult(
+            outputFilePath: outputPath,
+            message: 'PDF generated successfully.',
+          ),
+        );
       } catch (e) {
         return Failure(ProcessingFailed(reason: 'Failed to create PDF: $e'));
       }
@@ -45,7 +47,9 @@ class LocalProcessingService implements ProcessingService {
     if (request.toolId == 'image_convert') {
       try {
         if (request.filePaths.isEmpty) {
-          return const Failure(ProcessingFailed(reason: 'No input image provided for conversion.'));
+          return const Failure(
+            ProcessingFailed(reason: 'No input image provided for conversion.'),
+          );
         }
         final targetFormat = request.format ?? 'JPG';
         const converter = ImageConversionService();
@@ -53,16 +57,22 @@ class LocalProcessingService implements ProcessingService {
           inputPath: request.filePaths.first,
           targetFormat: targetFormat,
         );
-        return Success(ProcessingResult(
-          outputFilePath: result.outputPath,
-          message: 'Image converted to ${result.format} successfully.',
-        ));
+        return Success(
+          ProcessingResult(
+            outputFilePath: result.outputPath,
+            message: 'Image converted to ${result.format} successfully.',
+          ),
+        );
       } catch (e) {
         return Failure(ProcessingFailed(reason: 'Failed to convert image: $e'));
       }
     }
 
-    return const Failure(ProcessingFailed(reason: 'Local on-device processing not implemented yet.'));
+    return const Failure(
+      ProcessingFailed(
+        reason: 'Local on-device processing not implemented yet.',
+      ),
+    );
   }
 
   /// Compiles a list of ScannedPage objects into a single PDF document.
@@ -76,7 +86,8 @@ class LocalProcessingService implements ProcessingService {
     for (final page in pages) {
       final path = page.activeFilePath;
       Uint8List? preloadedBytes;
-      if (path.toLowerCase().endsWith('.heic') || path.toLowerCase().endsWith('.heif')) {
+      if (path.toLowerCase().endsWith('.heic') ||
+          path.toLowerCase().endsWith('.heif')) {
         try {
           preloadedBytes = await FlutterImageCompress.compressWithFile(
             path,
@@ -98,12 +109,16 @@ class LocalProcessingService implements ProcessingService {
 
     // 3. Write output file to persistent KrocPDF_Documents directory
     final appDocsDir = await getApplicationDocumentsDirectory();
-    final targetDir = Directory('${appDocsDir.path}/${FilesRepository.documentsFolder}');
+    final targetDir = Directory(
+      '${appDocsDir.path}/${FilesRepository.documentsFolder}',
+    );
     if (!await targetDir.exists()) {
       await targetDir.create(recursive: true);
     }
 
-    final sanitizedName = outputFileName.endsWith('.pdf') ? outputFileName : '$outputFileName.pdf';
+    final sanitizedName = outputFileName.endsWith('.pdf')
+        ? outputFileName
+        : '$outputFileName.pdf';
     final outputFile = File('${targetDir.path}/$sanitizedName');
     await outputFile.writeAsBytes(pdfBytes);
 
@@ -112,7 +127,9 @@ class LocalProcessingService implements ProcessingService {
 }
 
 /// Top-level isolate worker for compiling PDF without freezing UI
-Future<Uint8List> _isolateCompilePdf(List<Map<String, dynamic>> pageDataList) async {
+Future<Uint8List> _isolateCompilePdf(
+  List<Map<String, dynamic>> pageDataList,
+) async {
   final pdfDocument = pw.Document();
 
   for (final data in pageDataList) {
@@ -152,7 +169,9 @@ Future<Uint8List> _isolateCompilePdf(List<Map<String, dynamic>> pageDataList) as
             pixel.b = val;
           }
         }
-        imageBytes = Uint8List.fromList(img.encodeJpg(transformed, quality: 90));
+        imageBytes = Uint8List.fromList(
+          img.encodeJpg(transformed, quality: 90),
+        );
       }
     }
 
@@ -163,10 +182,7 @@ Future<Uint8List> _isolateCompilePdf(List<Map<String, dynamic>> pageDataList) as
         margin: const pw.EdgeInsets.all(16),
         build: (pw.Context context) {
           return pw.Center(
-            child: pw.Image(
-              memoryImage,
-              fit: pw.BoxFit.contain,
-            ),
+            child: pw.Image(memoryImage, fit: pw.BoxFit.contain),
           );
         },
       ),

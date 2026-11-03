@@ -6,7 +6,9 @@ class CloudProcessingService implements ProcessingService {
   const CloudProcessingService();
 
   @override
-  Future<Result<ProcessingResult, AppError>> process(ProcessingRequest request) {
+  Future<Result<ProcessingResult, AppError>> process(
+    ProcessingRequest request,
+  ) {
     throw UnimplementedError('Cloud processing not implemented yet.');
   }
 }

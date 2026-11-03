@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../domain/app_mode.dart';
 import '../domain/tool_item.dart';
 import 'widgets/mode_selector.dart';
@@ -55,7 +56,9 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    activeMode == AppMode.confidential ? '100% on-device' : 'Cloud enabled',
+                    activeMode == AppMode.confidential
+                        ? '100% on-device'
+                        : 'Cloud enabled',
                     style: TextStyle(
                       fontSize: 11,
                       color: isDark ? Colors.white54 : Colors.black45,

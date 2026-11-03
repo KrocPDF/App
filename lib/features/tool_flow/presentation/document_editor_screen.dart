@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,9 +15,7 @@ import '../domain/scanned_document.dart';
 /// Riverpod StateNotifier managing multi-page editing operations.
 class DocumentEditorNotifier extends StateNotifier<DocumentEditorState> {
   DocumentEditorNotifier()
-      : super(DocumentEditorState(
-          documentTitle: 'Scan_${_formatCurrentDate()}',
-        ));
+    : super(DocumentEditorState(documentTitle: 'Scan_${_formatCurrentDate()}'));
 
   static String _formatCurrentDate() {
     final now = DateTime.now();
@@ -82,34 +81,31 @@ class DocumentEditorNotifier extends StateNotifier<DocumentEditorState> {
   }
 
   void setOutputPdf(String pdfPath) {
-    state = state.copyWith(
-      outputPdfPath: pdfPath,
-      isProcessing: false,
-    );
+    state = state.copyWith(outputPdfPath: pdfPath, isProcessing: false);
   }
 
   void reset() {
-    state = DocumentEditorState(
-      documentTitle: 'Scan_${_formatCurrentDate()}',
-    );
+    state = DocumentEditorState(documentTitle: 'Scan_${_formatCurrentDate()}');
   }
 }
 
 final documentEditorProvider =
     StateNotifierProvider<DocumentEditorNotifier, DocumentEditorState>((ref) {
-  return DocumentEditorNotifier();
-});
+      return DocumentEditorNotifier();
+    });
 
 /// Shared review and multi-page editing screen used by BOTH Scan and Image-to-PDF flows.
 class DocumentEditorScreen extends ConsumerStatefulWidget {
   const DocumentEditorScreen({super.key});
 
   @override
-  ConsumerState<DocumentEditorScreen> createState() => _DocumentEditorScreenState();
+  ConsumerState<DocumentEditorScreen> createState() =>
+      _DocumentEditorScreenState();
 }
 
 class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
-  final LocalProcessingService _processingService = const LocalProcessingService();
+  final LocalProcessingService _processingService =
+      const LocalProcessingService();
 
   Future<bool> _confirmDiscard(BuildContext context) async {
     final state = ref.read(documentEditorProvider);
@@ -161,20 +157,19 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
             initAspectRatio: CropAspectRatioPreset.original,
             lockAspectRatio: false,
           ),
-          IOSUiSettings(
-            title: 'Crop Page',
-          ),
+          IOSUiSettings(title: 'Crop Page'),
         ],
       );
 
       if (croppedFile != null && mounted) {
-        ref.read(documentEditorProvider.notifier).cropCurrentPage(croppedFile.path);
+        ref
+            .read(documentEditorProvider.notifier)
+            .cropCurrentPage(croppedFile.path);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cropping unavailable: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Cropping unavailable: $e')));
       }
     }
   }
@@ -279,13 +274,19 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
                 child: Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
                             'Reorder Pages',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           TextButton(
                             onPressed: () => Navigator.of(ctx).pop(),
@@ -321,7 +322,9 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
                               ),
                               child: Text(
                                 '${index + 1}',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             title: Text('Page ${index + 1}'),
@@ -416,7 +419,8 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
     } on PlatformException catch (e) {
       if (mounted) {
         final isPlayServices =
-            e.code.contains('PLAY_SERVICES') || (e.message?.contains('Play Services') == true);
+            e.code.contains('PLAY_SERVICES') ||
+            (e.message?.contains('Play Services') == true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -452,7 +456,9 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
 
       if (mounted) {
         // Register in persistent files repository
-        await ref.read(savedFilesProvider.notifier).registerSavedPdf(
+        await ref
+            .read(savedFilesProvider.notifier)
+            .registerSavedPdf(
               title: state.documentTitle,
               tempPdfPath: outputPath,
               pageCount: state.pageCount,
@@ -477,9 +483,8 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
     } catch (e) {
       if (mounted) {
         ref.read(documentEditorProvider.notifier).setProcessing(false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to compile PDF: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to compile PDF: $e')));
       }
     }
   }
@@ -520,7 +525,10 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
                   child: Text(
                     state.documentTitle,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -531,7 +539,10 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
           actions: [
             if (state.outputPdfPath == null)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 child: ElevatedButton(
                   onPressed: state.isProcessing ? null : _handleSavePdf,
                   child: state.isProcessing
@@ -607,7 +618,9 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: borderColor, width: 1),
-                    color: isDark ? const Color(0xFF141414) : const Color(0xFFEEEEEE),
+                    color: isDark
+                        ? const Color(0xFF141414)
+                        : const Color(0xFFEEEEEE),
                   ),
                   child: _buildImagePreview(currentPage, isDark),
                 ),
@@ -685,14 +698,21 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
                       Positioned.fill(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(2),
-                          child: _buildImagePreview(page, isDark, isThumbnail: true),
+                          child: _buildImagePreview(
+                            page,
+                            isDark,
+                            isThumbnail: true,
+                          ),
                         ),
                       ),
                       Positioned(
                         top: 2,
                         left: 2,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 1,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black87,
                             borderRadius: BorderRadius.circular(2),
@@ -826,7 +846,11 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
     );
   }
 
-  Widget _buildImagePreview(ScannedPage page, bool isDark, {bool isThumbnail = false}) {
+  Widget _buildImagePreview(
+    ScannedPage page,
+    bool isDark, {
+    bool isThumbnail = false,
+  }) {
     final file = File(page.activeFilePath);
     Widget imageWidget;
 
@@ -834,7 +858,8 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
       imageWidget = Image.file(
         file,
         fit: isThumbnail ? BoxFit.cover : BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(page, isDark),
+        errorBuilder: (context, error, stackTrace) =>
+            _buildPlaceholder(page, isDark),
       );
     } else {
       imageWidget = _buildPlaceholder(page, isDark);
@@ -852,20 +877,52 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
     if (page.filter == PageFilter.grayscale) {
       imageWidget = ColorFiltered(
         colorFilter: const ColorFilter.matrix([
-          0.2126, 0.7152, 0.0722, 0, 0,
-          0.2126, 0.7152, 0.0722, 0, 0,
-          0.2126, 0.7152, 0.0722, 0, 0,
-          0,      0,      0,      1, 0,
+          0.2126,
+          0.7152,
+          0.0722,
+          0,
+          0,
+          0.2126,
+          0.7152,
+          0.0722,
+          0,
+          0,
+          0.2126,
+          0.7152,
+          0.0722,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
         ]),
         child: imageWidget,
       );
     } else if (page.filter == PageFilter.blackAndWhite) {
       imageWidget = ColorFiltered(
         colorFilter: const ColorFilter.matrix([
-          2.0, 2.0, 2.0, 0, -200,
-          2.0, 2.0, 2.0, 0, -200,
-          2.0, 2.0, 2.0, 0, -200,
-          0,   0,   0,   1, 0,
+          2.0,
+          2.0,
+          2.0,
+          0,
+          -200,
+          2.0,
+          2.0,
+          2.0,
+          0,
+          -200,
+          2.0,
+          2.0,
+          2.0,
+          0,
+          -200,
+          0,
+          0,
+          0,
+          1,
+          0,
         ]),
         child: imageWidget,
       );

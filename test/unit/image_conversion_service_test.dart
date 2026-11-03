@@ -16,12 +16,27 @@ void main() {
     });
 
     test('detectFormat detects extensions case-insensitively', () {
-      expect(ImageConversionService.detectFormat('IMG_001.heic'), equals('HEIC'));
-      expect(ImageConversionService.detectFormat('IMG_002.HEIF'), equals('HEIF'));
+      expect(
+        ImageConversionService.detectFormat('IMG_001.heic'),
+        equals('HEIC'),
+      );
+      expect(
+        ImageConversionService.detectFormat('IMG_002.HEIF'),
+        equals('HEIF'),
+      );
       expect(ImageConversionService.detectFormat('IMG_003.png'), equals('PNG'));
-      expect(ImageConversionService.detectFormat('IMG_004.jpeg'), equals('JPG'));
-      expect(ImageConversionService.detectFormat('IMG_005.webp'), equals('WEBP'));
-      expect(ImageConversionService.detectFormat('file.unknown'), equals('UNKNOWN'));
+      expect(
+        ImageConversionService.detectFormat('IMG_004.jpeg'),
+        equals('JPG'),
+      );
+      expect(
+        ImageConversionService.detectFormat('IMG_005.webp'),
+        equals('WEBP'),
+      );
+      expect(
+        ImageConversionService.detectFormat('file.unknown'),
+        equals('UNKNOWN'),
+      );
     });
 
     test('ConvertedImageResult formats sizes properly', () {

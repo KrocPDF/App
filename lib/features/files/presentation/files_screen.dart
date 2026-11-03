@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -57,10 +58,8 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
       if (mounted) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => PdfViewerScreen(
-              filePath: doc.filePath,
-              title: doc.title,
-            ),
+            builder: (context) =>
+                PdfViewerScreen(filePath: doc.filePath, title: doc.title),
           ),
         );
       }
@@ -103,9 +102,7 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
       return;
     }
     // ignore: deprecated_member_use
-    await Share.shareXFiles(
-      [XFile(doc.filePath)],
-    );
+    await Share.shareXFiles([XFile(doc.filePath)]);
   }
 
   Future<void> _handlePrint(SavedDocument doc) async {
@@ -117,15 +114,11 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
     }
     try {
       final bytes = await file.readAsBytes();
-      await Printing.layoutPdf(
-        onLayout: (_) => bytes,
-        name: doc.title,
-      );
+      await Printing.layoutPdf(onLayout: (_) => bytes, name: doc.title);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Print failed: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Print failed: $e')));
       }
     }
   }
@@ -140,10 +133,9 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
 
     // Case 1: Raw scan pages captured in app -> reopen in editor for re-cropping & filters
     if (doc.originalPagePaths.isNotEmpty) {
-      ref.read(documentEditorProvider.notifier).init(
-            doc.originalPagePaths,
-            title: doc.title,
-          );
+      ref
+          .read(documentEditorProvider.notifier)
+          .init(doc.originalPagePaths, title: doc.title);
       if (mounted) {
         context.push('/edit-document');
       }
@@ -152,7 +144,8 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
 
     // Case 2: Single image file -> preload into document editor for cropping, rotating & filters
     final lower = doc.filePath.toLowerCase();
-    final isImage = lower.endsWith('.jpg') ||
+    final isImage =
+        lower.endsWith('.jpg') ||
         lower.endsWith('.jpeg') ||
         lower.endsWith('.png') ||
         lower.endsWith('.webp') ||
@@ -160,10 +153,9 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
         lower.endsWith('.heif');
 
     if (isImage) {
-      ref.read(documentEditorProvider.notifier).init(
-            [doc.filePath],
-            title: doc.title,
-          );
+      ref.read(documentEditorProvider.notifier).init([
+        doc.filePath,
+      ], title: doc.title);
       if (mounted) {
         context.push('/edit-document');
       }
@@ -195,13 +187,18 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF262626) : const Color(0xFFEEEEEE),
+                          color: isDark
+                              ? const Color(0xFF262626)
+                              : const Color(0xFFEEEEEE),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(Icons.picture_as_pdf, size: 22),
@@ -243,31 +240,43 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
                 ListTile(
                   leading: const Icon(Icons.compress_outlined),
                   title: const Text('Compress PDF'),
-                  subtitle: const Text('Reduce file size with compression settings'),
+                  subtitle: const Text(
+                    'Reduce file size with compression settings',
+                  ),
                   onTap: () {
                     Navigator.of(ctx).pop();
                     final encoded = Uri.encodeComponent(doc.filePath);
-                    context.push('/tool/compress_pdf/flow?initialFilePath=$encoded');
+                    context.push(
+                      '/tool/compress_pdf/flow?initialFilePath=$encoded',
+                    );
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.call_split_outlined),
                   title: const Text('Split PDF'),
-                  subtitle: const Text('Extract or separate pages from this document'),
+                  subtitle: const Text(
+                    'Extract or separate pages from this document',
+                  ),
                   onTap: () {
                     Navigator.of(ctx).pop();
                     final encoded = Uri.encodeComponent(doc.filePath);
-                    context.push('/tool/split_pdf/flow?initialFilePath=$encoded');
+                    context.push(
+                      '/tool/split_pdf/flow?initialFilePath=$encoded',
+                    );
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.call_merge_outlined),
                   title: const Text('Merge with Another PDF'),
-                  subtitle: const Text('Combine this PDF with additional documents'),
+                  subtitle: const Text(
+                    'Combine this PDF with additional documents',
+                  ),
                   onTap: () {
                     Navigator.of(ctx).pop();
                     final encoded = Uri.encodeComponent(doc.filePath);
-                    context.push('/tool/merge_pdf/flow?initialFilePath=$encoded');
+                    context.push(
+                      '/tool/merge_pdf/flow?initialFilePath=$encoded',
+                    );
                   },
                 ),
               ],
@@ -315,7 +324,9 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete File?'),
-        content: Text('Are you sure you want to delete "${doc.title}.pdf"? This cannot be undone.'),
+        content: Text(
+          'Are you sure you want to delete "${doc.title}.pdf"? This cannot be undone.',
+        ),
         actions: [
           OutlinedButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -347,11 +358,14 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
   }
 
   Future<void> _handleImportFile() async {
-    final hasPermission = await StoragePermissionHelper.ensureStoragePermission();
+    final hasPermission =
+        await StoragePermissionHelper.ensureStoragePermission();
     if (!hasPermission) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Storage permission is required to import files.')),
+          const SnackBar(
+            content: Text('Storage permission is required to import files.'),
+          ),
         );
       }
       return;
@@ -369,7 +383,10 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
 
       final file = File(picked.path!);
       const validator = LocalFileValidationService();
-      final validation = validator.validateFile(file, allowedExtensions: ['pdf']);
+      final validation = validator.validateFile(
+        file,
+        allowedExtensions: ['pdf'],
+      );
 
       if (validation is Failure<bool, AppError>) {
         if (mounted) {
@@ -384,10 +401,9 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
       }
 
       final originalName = picked.name;
-      final doc = await ref.read(savedFilesProvider.notifier).addExternalFile(
-            file,
-            customTitle: originalName,
-          );
+      final doc = await ref
+          .read(savedFilesProvider.notifier)
+          .addExternalFile(file, customTitle: originalName);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -403,9 +419,8 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to import file: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to import file: $e')));
       }
     }
   }
@@ -453,9 +468,13 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
           child: files.isEmpty
               ? _buildEmptyState(context, isDark, borderColor)
               : ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   itemCount: files.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 10),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final doc = files[index];
                     return _buildFileCard(context, doc, isDark, borderColor);
@@ -466,7 +485,11 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, bool isDark, Color borderColor) {
+  Widget _buildEmptyState(
+    BuildContext context,
+    bool isDark,
+    Color borderColor,
+  ) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -542,12 +565,16 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
                           width: 38,
                           height: 38,
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F3F3),
+                            color: isDark
+                                ? const Color(0xFF1E1E1E)
+                                : const Color(0xFFF3F3F3),
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
                               color: doc.filePath.toLowerCase().endsWith('.pdf')
-                                  ? const Color(0xFFFF9500).withValues(alpha: 0.4)
-                                  : const Color(0xFF007AFF).withValues(alpha: 0.4),
+                                  ? const Color(0xFFFF9500)
+                                        .withValues(alpha: 0.4)
+                                  : const Color(0xFF007AFF)
+                                        .withValues(alpha: 0.4),
                               width: 1,
                             ),
                           ),
@@ -568,8 +595,12 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
                             children: [
                               Text(
                                 doc.filePath.toLowerCase().endsWith('.pdf')
-                                    ? (doc.title.toLowerCase().endsWith('.pdf') ? doc.title : '${doc.title}.pdf')
-                                    : (doc.title.contains('.') ? doc.title : '${doc.title}${doc.filePath.substring(doc.filePath.lastIndexOf('.'))}'),
+                                    ? (doc.title.toLowerCase().endsWith('.pdf')
+                                          ? doc.title
+                                          : '${doc.title}.pdf')
+                                    : (doc.title.contains('.')
+                                          ? doc.title
+                                          : '${doc.title}${doc.filePath.substring(doc.filePath.lastIndexOf('.'))}'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -585,7 +616,9 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
                                     : '${doc.formattedSize} • ${doc.filePath.split('.').last.toUpperCase()} • $formattedDate',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isDark ? Colors.white54 : Colors.black54,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : Colors.black54,
                                 ),
                               ),
                             ],
@@ -625,11 +658,17 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
                 itemBuilder: (ctx) => [
                   const PopupMenuItem(
                     value: 'view',
-                    child: _ActionRow(icon: Icons.visibility_outlined, text: 'View'),
+                    child: _ActionRow(
+                      icon: Icons.visibility_outlined,
+                      text: 'View',
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'share',
-                    child: _ActionRow(icon: Icons.share_outlined, text: 'Share'),
+                    child: _ActionRow(
+                      icon: Icons.share_outlined,
+                      text: 'Share',
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'edit',
@@ -637,11 +676,17 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
                   ),
                   const PopupMenuItem(
                     value: 'print',
-                    child: _ActionRow(icon: Icons.print_outlined, text: 'Print'),
+                    child: _ActionRow(
+                      icon: Icons.print_outlined,
+                      text: 'Print',
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'rename',
-                    child: _ActionRow(icon: Icons.drive_file_rename_outline, text: 'Rename'),
+                    child: _ActionRow(
+                      icon: Icons.drive_file_rename_outline,
+                      text: 'Rename',
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'delete',
@@ -738,7 +783,11 @@ class _QuickActionButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: isDark ? Colors.white70 : Colors.black87),
+            Icon(
+              icon,
+              size: 15,
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
             const SizedBox(width: 6),
             Text(
               label,

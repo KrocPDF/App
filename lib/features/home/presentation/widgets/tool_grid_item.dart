@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../../domain/tool_item.dart';
 
 class ToolGridItem extends StatelessWidget {
   final ToolItem tool;
   final VoidCallback onTap;
 
-  const ToolGridItem({
-    super.key,
-    required this.tool,
-    required this.onTap,
-  });
+  const ToolGridItem({super.key, required this.tool, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +49,10 @@ class ToolGridItem extends StatelessWidget {
                   if (tool.requiresNonConfidential)
                     Flexible(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           border: Border.all(color: borderColor, width: 0.5),
                           borderRadius: BorderRadius.circular(3),

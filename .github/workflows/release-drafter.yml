@@ -4,12 +4,12 @@ on:
   push:
     branches:
       - main
-  pull_request:
+  pull_request_target:
     types: [opened, reopened, synchronize]
 
 permissions:
   contents: write
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   draft_release:
@@ -22,4 +22,3 @@ jobs:
           config-name: release-drafter.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
