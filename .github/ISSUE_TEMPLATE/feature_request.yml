@@ -1,0 +1,39 @@
+name: Feature Request
+description: Suggest an idea, new conversion tool, or enhancement for KrocPDF.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We welcome ideas for new tools, formats, and UI improvements!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear and concise description of what the problem or limitation is.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution / Feature
+      description: Describe what you would like to see happen.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or features you've considered.
+  - type: dropdown
+    id: processing_mode
+    attributes:
+      label: Target Execution Mode
+      description: Can this feature run entirely offline on-device?
+      options:
+        - Confidential Mode (100% on-device processing)
+        - Non-Confidential Mode (Cloud-assisted processing)
+        - Unsure / Either
+    validations:
+      required: true
