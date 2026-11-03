@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
+
 import '../domain/saved_document.dart';
 
 class FilesRepository {
@@ -112,7 +114,10 @@ class FilesRepository {
     final stat = await finalFile.stat();
     final newDoc = SavedDocument(
       id: 'doc_${DateTime.now().millisecondsSinceEpoch}',
-      title: destinationPath.split(Platform.pathSeparator).last.replaceAll('.pdf', ''),
+      title: destinationPath
+          .split(Platform.pathSeparator)
+          .last
+          .replaceAll('.pdf', ''),
       filePath: finalFile.path,
       fileSizeBytes: stat.size,
       createdAt: DateTime.now(),
@@ -181,7 +186,9 @@ class FilesRepository {
 
     final finalFileName = destinationPath.split(Platform.pathSeparator).last;
     final dotIndex = finalFileName.lastIndexOf('.');
-    final finalTitle = dotIndex > 0 ? finalFileName.substring(0, dotIndex) : finalFileName;
+    final finalTitle = dotIndex > 0
+        ? finalFileName.substring(0, dotIndex)
+        : finalFileName;
 
     final newDoc = SavedDocument(
       id: 'doc_${DateTime.now().microsecondsSinceEpoch}',
@@ -199,7 +206,10 @@ class FilesRepository {
     return newDoc;
   }
 
-  Future<SavedDocument?> renameDocument(SavedDocument doc, String newTitle) async {
+  Future<SavedDocument?> renameDocument(
+    SavedDocument doc,
+    String newTitle,
+  ) async {
     final extIndex = doc.filePath.lastIndexOf('.');
     final ext = extIndex != -1 ? doc.filePath.substring(extIndex) : '.pdf';
 
@@ -319,6 +329,6 @@ final filesRepositoryProvider = Provider<FilesRepository>((ref) {
 
 final savedFilesProvider =
     StateNotifierProvider<SavedFilesNotifier, List<SavedDocument>>((ref) {
-  final repo = ref.watch(filesRepositoryProvider);
-  return SavedFilesNotifier(repo);
-});
+      final repo = ref.watch(filesRepositoryProvider);
+      return SavedFilesNotifier(repo);
+    });

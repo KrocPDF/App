@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,7 +47,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
 
   // Image conversion flow state
   final ImagePicker _picker = ImagePicker();
-  final ImageConversionService _conversionService = const ImageConversionService();
+  final ImageConversionService _conversionService =
+      const ImageConversionService();
 
   String? _selectedImagePath;
   String _sourceFormat = '';
@@ -66,7 +68,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     super.initState();
     _currentStepIndex = widget.initialStepIndex;
     final requested = widget.format?.trim().toUpperCase();
-    if (requested != null && ImageConversionService.supportedOutputFormats.contains(requested)) {
+    if (requested != null &&
+        ImageConversionService.supportedOutputFormats.contains(requested)) {
       _targetFormat = requested;
     } else {
       _targetFormat = 'JPG';
@@ -78,7 +81,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       if (file.existsSync()) {
         if (_isImageConvert) {
           _selectedImagePath = file.path;
-          final fileName = file.path.split(Platform.pathSeparator).last.split('/').last;
+          final fileName = file.path
+              .split(Platform.pathSeparator)
+              .last
+              .split('/')
+              .last;
           final parts = fileName.split('.');
           _sourceFormat = parts.length > 1 ? parts.last.toUpperCase() : 'JPG';
           _sourceFileSizeBytes = file.lengthSync();
@@ -135,19 +142,21 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
       }
     }
   }
 
   Future<void> _pickImageFromStorage() async {
-    final hasPermission = await StoragePermissionHelper.ensureStoragePermission();
+    final hasPermission =
+        await StoragePermissionHelper.ensureStoragePermission();
     if (!hasPermission) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Storage permission is required to browse images.')),
+          const SnackBar(
+            content: Text('Storage permission is required to browse images.'),
+          ),
         );
       }
       return;
@@ -204,11 +213,14 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     required List<String> allowedExtensions,
     required bool allowMultiple,
   }) async {
-    final hasPermission = await StoragePermissionHelper.ensureStoragePermission();
+    final hasPermission =
+        await StoragePermissionHelper.ensureStoragePermission();
     if (!hasPermission) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Storage permission is required to browse files.')),
+          const SnackBar(
+            content: Text('Storage permission is required to browse files.'),
+          ),
         );
       }
       return;
@@ -237,7 +249,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       for (final picked in pickedFiles) {
         if (picked.path == null) continue;
         final file = File(picked.path!);
-        final validation = validator.validateFile(file, allowedExtensions: allowedExtensions);
+        final validation = validator.validateFile(
+          file,
+          allowedExtensions: allowedExtensions,
+        );
 
         if (validation is Failure<bool, AppError>) {
           if (mounted) {
@@ -272,9 +287,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick files: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to pick files: $e')));
       }
     }
   }
@@ -286,7 +300,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     if (savedDocs.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No saved documents in KrocPDF yet. Import or scan files first.'),
+          content: Text(
+            'No saved documents in KrocPDF yet. Import or scan files first.',
+          ),
           duration: Duration(seconds: 3),
         ),
       );
@@ -318,7 +334,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                       children: [
                         const Text(
                           'Pick Saved Document',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.close),
@@ -331,22 +350,35 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                   Expanded(
                     child: ListView.separated(
                       controller: scrollController,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       itemCount: savedDocs.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 8),
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final doc = savedDocs[index];
                         return ListTile(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: theme.colorScheme.outline, width: 0.8),
+                            side: BorderSide(
+                              color: theme.colorScheme.outline,
+                              width: 0.8,
+                            ),
                           ),
-                          leading: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFF9500)),
+                          leading: const Icon(
+                            Icons.picture_as_pdf_outlined,
+                            color: Color(0xFFFF9500),
+                          ),
                           title: Text(
                             '${doc.title}.pdf',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
                           ),
                           subtitle: Text(
                             '${doc.formattedSize} • ${doc.pageCount} ${doc.pageCount == 1 ? 'page' : 'pages'}',
@@ -370,12 +402,15 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       if (selected != null) {
         final file = File(selected.filePath);
         const validator = LocalFileValidationService();
-        final validation = validator.validateFile(file, allowedExtensions: ['pdf']);
+        final validation = validator.validateFile(
+          file,
+          allowedExtensions: ['pdf'],
+        );
         if (validation is Failure<bool, AppError>) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(validation.error.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(validation.error.message)));
           }
           return;
         }
@@ -412,7 +447,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                           children: [
                             const Text(
                               'Pick Saved Documents to Merge',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.close),
@@ -425,9 +463,13 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                       Expanded(
                         child: ListView.separated(
                           controller: scrollController,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           itemCount: savedDocs.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 8),
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 8),
                           itemBuilder: (context, index) {
                             final doc = savedDocs[index];
                             final isChecked = selectedDocIds.contains(doc.id);
@@ -435,20 +477,31 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                               value: isChecked,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                side: BorderSide(color: theme.colorScheme.outline, width: 0.8),
+                                side: BorderSide(
+                                  color: theme.colorScheme.outline,
+                                  width: 0.8,
+                                ),
                               ),
-                              secondary: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFF9500)),
+                              secondary: const Icon(
+                                Icons.picture_as_pdf_outlined,
+                                color: Color(0xFFFF9500),
+                              ),
                               title: Text(
                                 '${doc.title}.pdf',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
                               ),
                               subtitle: Text(
                                 '${doc.formattedSize} • ${doc.pageCount} ${doc.pageCount == 1 ? 'page' : 'pages'}',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isDark ? Colors.white60 : Colors.black54,
+                                  color: isDark
+                                      ? Colors.white60
+                                      : Colors.black54,
                                 ),
                               ),
                               onChanged: (val) {
@@ -472,7 +525,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                             onPressed: selectedDocIds.isNotEmpty
                                 ? () => Navigator.of(ctx).pop(true)
                                 : null,
-                            child: Text('Add Selected (${selectedDocIds.length})'),
+                            child: Text(
+                              'Add Selected (${selectedDocIds.length})',
+                            ),
                           ),
                         ),
                       ),
@@ -491,7 +546,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
         for (final id in selectedDocIds) {
           final doc = savedDocs.firstWhere((d) => d.id == id);
           final file = File(doc.filePath);
-          final valResult = validator.validateFile(file, allowedExtensions: ['pdf']);
+          final valResult = validator.validateFile(
+            file,
+            allowedExtensions: ['pdf'],
+          );
           if (valResult is Success) {
             if (!_selectedFiles.any((f) => f.path == file.path)) {
               newlyAdded.add(file);
@@ -550,9 +608,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       return;
     }
     // ignore: deprecated_member_use
-    await Share.shareXFiles(
-      [XFile(_conversionResult!.outputPath)],
-    );
+    await Share.shareXFiles([XFile(_conversionResult!.outputPath)]);
   }
 
   Future<void> _handleDownloadResult() async {
@@ -568,11 +624,13 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     }
 
     try {
-      await ref.read(savedFilesProvider.notifier).addExternalFile(
-        file,
-        customTitle: _conversionResult!.fileName,
-        sourceType: SavedDocumentSource.convert,
-      );
+      await ref
+          .read(savedFilesProvider.notifier)
+          .addExternalFile(
+            file,
+            customTitle: _conversionResult!.fileName,
+            sourceType: SavedDocumentSource.convert,
+          );
 
       if (mounted) {
         setState(() {
@@ -587,9 +645,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save file: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to save file: $e')));
       }
     }
   }
@@ -616,27 +673,30 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     final borderColor = theme.colorScheme.outline;
 
     final toolTitle = tool?.title ?? 'Tool Flow';
-    final formatLabel = widget.format != null ? ' (${widget.format!.toUpperCase()})' : '';
+    final formatLabel = widget.format != null
+        ? ' (${widget.format!.toUpperCase()})'
+        : '';
 
     final bool canGoNext;
     if (_isImageConvert) {
-      canGoNext = (_currentStepIndex == 0 && _selectedImagePath != null) ||
+      canGoNext =
+          (_currentStepIndex == 0 && _selectedImagePath != null) ||
           (_currentStepIndex == 1);
     } else if (widget.toolId == 'office_to_pdf') {
       // Office to PDF is UI scaffolding only in this phase
       canGoNext = false;
     } else if (widget.toolId == 'merge_pdf') {
-      canGoNext = (_currentStepIndex == 0 && _selectedFiles.length >= 2) ||
+      canGoNext =
+          (_currentStepIndex == 0 && _selectedFiles.length >= 2) ||
           (_currentStepIndex > 0);
     } else {
-      canGoNext = (_currentStepIndex == 0 && _selectedFiles.isNotEmpty) ||
+      canGoNext =
+          (_currentStepIndex == 0 && _selectedFiles.isNotEmpty) ||
           (_currentStepIndex > 0);
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('$toolTitle$formatLabel'),
-      ),
+      appBar: AppBar(title: Text('$toolTitle$formatLabel')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 580),
@@ -644,9 +704,14 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
             children: [
               // Step Indicator Bar
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: borderColor, width: 1)),
+                  border: Border(
+                    bottom: BorderSide(color: borderColor, width: 1),
+                  ),
                 ),
                 child: Row(
                   children: List.generate(_steps.length, (index) {
@@ -660,11 +725,14 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                           if (_isImageConvert) {
                             if (index == 0) {
                               setState(() => _currentStepIndex = index);
-                            } else if (index == 1 && _selectedImagePath != null) {
+                            } else if (index == 1 &&
+                                _selectedImagePath != null) {
                               setState(() => _currentStepIndex = index);
-                            } else if (index == 2 && _selectedImagePath != null) {
+                            } else if (index == 2 &&
+                                _selectedImagePath != null) {
                               _startConversion();
-                            } else if (index == 3 && _conversionResult != null) {
+                            } else if (index == 3 &&
+                                _conversionResult != null) {
                               setState(() => _currentStepIndex = index);
                             }
                           } else {
@@ -682,10 +750,14 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 11,
-                                fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+                                fontWeight: isCurrent
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
                                 color: isCurrent
                                     ? (isDark ? Colors.white : Colors.black)
-                                    : (isDark ? Colors.white38 : Colors.black38),
+                                    : (isDark
+                                          ? Colors.white38
+                                          : Colors.black38),
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -763,7 +835,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     );
   }
 
-  Widget _buildStepContent(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildStepContent(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     if (_isImageConvert) {
       switch (_currentStepIndex) {
         case 0:
@@ -795,9 +871,17 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
 
   // --- Image Convert Specific Steps ---
 
-  Widget _buildImageConvertSelectStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildImageConvertSelectStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     if (_selectedImagePath != null) {
-      final fileName = _selectedImagePath!.split(Platform.pathSeparator).last.split('/').last;
+      final fileName = _selectedImagePath!
+          .split(Platform.pathSeparator)
+          .last
+          .split('/')
+          .last;
       final isHeic = ImageConversionService.isHeic(_selectedImagePath!);
 
       return Column(
@@ -816,7 +900,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 180, maxWidth: 260),
+                      constraints: const BoxConstraints(
+                        maxHeight: 180,
+                        maxWidth: 260,
+                      ),
                       child: Image.file(
                         File(_selectedImagePath!),
                         fit: BoxFit.contain,
@@ -828,7 +915,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF222222) : const Color(0xFFEEEEEE),
+                      color: isDark
+                          ? const Color(0xFF222222)
+                          : const Color(0xFFEEEEEE),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isHeic ? const Color(0xFFFF9500) : borderColor,
@@ -846,7 +935,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: isHeic
                             ? const Color(0xFFFF9500).withValues(alpha: 0.2)
@@ -868,7 +960,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                         fileName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -957,7 +1052,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     );
   }
 
-  Widget _buildImageConvertOptionsStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildImageConvertOptionsStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -971,7 +1070,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.check_circle_outline, size: 20, color: Colors.green),
+              const Icon(
+                Icons.check_circle_outline,
+                size: 20,
+                color: Colors.green,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -979,7 +1082,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                   children: [
                     const Text(
                       'Input Image Ready',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -1026,7 +1132,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
               ),
               selected: isSelected,
               selectedColor: isDark ? Colors.white : Colors.black,
-              backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF0F0F0),
+              backgroundColor: isDark
+                  ? const Color(0xFF1E1E1E)
+                  : const Color(0xFFF0F0F0),
               side: BorderSide(
                 color: isSelected ? Colors.transparent : borderColor,
                 width: 1,
@@ -1102,7 +1210,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     );
   }
 
-  Widget _buildImageConvertProgressStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildImageConvertProgressStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     if (_conversionError != null) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1162,13 +1274,18 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     );
   }
 
-  Widget _buildImageConvertResultStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildImageConvertResultStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     final res = _conversionResult;
     if (res == null) {
       return const Center(child: Text('No result available.'));
     }
 
-    final isPreviewable = res.format != 'HEIC' && File(res.outputPath).existsSync();
+    final isPreviewable =
+        res.format != 'HEIC' && File(res.outputPath).existsSync();
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1209,7 +1326,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(6),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 180, maxWidth: 260),
+                    constraints: const BoxConstraints(
+                      maxHeight: 180,
+                      maxWidth: 260,
+                    ),
                     child: Image.file(
                       File(res.outputPath),
                       fit: BoxFit.contain,
@@ -1221,7 +1341,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF222222) : const Color(0xFFECECEC),
+                    color: isDark
+                        ? const Color(0xFF222222)
+                        : const Color(0xFFECECEC),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.insert_drive_file_outlined, size: 32),
@@ -1231,7 +1353,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                 res.fileName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
@@ -1252,7 +1377,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
           children: [
             ElevatedButton.icon(
               onPressed: _isSavedToFiles ? null : _handleDownloadResult,
-              icon: Icon(_isSavedToFiles ? Icons.check : Icons.download_outlined, size: 18),
+              icon: Icon(
+                _isSavedToFiles ? Icons.check : Icons.download_outlined,
+                size: 18,
+              ),
               label: Text(_isSavedToFiles ? 'Saved to Files' : 'Download'),
             ),
             ElevatedButton.icon(
@@ -1273,7 +1401,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
 
   // --- Step 0 Dispatcher for Non-Image-Convert Tools ---
 
-  Widget _buildSelectFilesStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildSelectFilesStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     if (widget.toolId == 'office_to_pdf') {
       return _buildOfficeSelectStep(context, borderColor, isDark);
     } else if (widget.toolId == 'merge_pdf') {
@@ -1305,12 +1437,18 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
 
   // --- Office to PDF Step 0 UI Scaffolding ---
 
-  Widget _buildOfficeSelectStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildOfficeSelectStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     if (_selectedFiles.isNotEmpty) {
       final file = _selectedFiles.first;
       final fileName = file.uri.pathSegments.last;
       final size = file.existsSync() ? file.lengthSync() : 0;
-      final ext = fileName.contains('.') ? fileName.split('.').last.toUpperCase() : 'DOC';
+      final ext = fileName.contains('.')
+          ? fileName.split('.').last.toUpperCase()
+          : 'DOC';
 
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1331,14 +1469,21 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                     color: Colors.blue.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.description_outlined, color: Colors.blueAccent, size: 30),
+                  child: const Icon(
+                    Icons.description_outlined,
+                    color: Colors.blueAccent,
+                    size: 30,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.blue.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
@@ -1358,7 +1503,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                         fileName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -1384,7 +1532,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.cloud_outlined, size: 20, color: Colors.blueAccent),
+                const Icon(
+                  Icons.cloud_outlined,
+                  size: 20,
+                  color: Colors.blueAccent,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -1404,7 +1556,14 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
             children: [
               OutlinedButton.icon(
                 onPressed: () => _pickFilesFromDevice(
-                  allowedExtensions: ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'],
+                  allowedExtensions: [
+                    'doc',
+                    'docx',
+                    'xls',
+                    'xlsx',
+                    'ppt',
+                    'pptx',
+                  ],
                   allowMultiple: false,
                 ),
                 icon: const Icon(Icons.swap_horiz, size: 16),
@@ -1470,7 +1629,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
 
   // --- Merge PDF Step 0 ---
 
-  Widget _buildMergePdfSelectStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildMergePdfSelectStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     if (_selectedFiles.isNotEmpty) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1480,12 +1643,19 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
             children: [
               Text(
                 '${_selectedFiles.length} ${_selectedFiles.length == 1 ? 'file' : 'files'} selected',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               if (_selectedFiles.length < 2)
                 const Text(
                   'Select at least 2 PDFs',
-                  style: TextStyle(fontSize: 11, color: Colors.orange, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.orange,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
             ],
           ),
@@ -1500,9 +1670,14 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
               final name = file.uri.pathSegments.last;
               final size = file.existsSync() ? file.lengthSync() : 0;
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF141414) : const Color(0xFFFAFAFA),
+                  color: isDark
+                      ? const Color(0xFF141414)
+                      : const Color(0xFFFAFAFA),
                   border: Border.all(color: borderColor, width: 0.8),
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -1521,7 +1696,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFFFF9500)),
+                    const Icon(
+                      Icons.picture_as_pdf_outlined,
+                      size: 20,
+                      color: Color(0xFFFF9500),
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -1531,7 +1710,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                             name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           Text(
                             '${(size / 1024).toStringAsFixed(1)} KB',
@@ -1545,7 +1727,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, size: 18),
-                      onPressed: () => setState(() => _selectedFiles.removeAt(index)),
+                      onPressed: () =>
+                          setState(() => _selectedFiles.removeAt(index)),
                     ),
                   ],
                 ),
@@ -1669,7 +1852,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                     color: const Color(0xFFFF9500).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFF9500), size: 24),
+                  child: const Icon(
+                    Icons.picture_as_pdf_outlined,
+                    color: Color(0xFFFF9500),
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1680,7 +1867,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                         name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -1711,7 +1901,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                 label: const Text('Change from Device'),
               ),
               OutlinedButton.icon(
-                onPressed: () => _showSavedDocumentsPicker(allowMultiple: false),
+                onPressed: () =>
+                    _showSavedDocumentsPicker(allowMultiple: false),
                 icon: const Icon(Icons.bookmark_border_outlined, size: 16),
                 label: const Text('Pick Saved Document'),
               ),
@@ -1782,7 +1973,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
 
   // --- Image to PDF Step 0 ---
 
-  Widget _buildImageToPdfSelectStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildImageToPdfSelectStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -1822,7 +2017,14 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
             ),
             OutlinedButton.icon(
               onPressed: () => _pickFilesFromDevice(
-                allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
+                allowedExtensions: [
+                  'jpg',
+                  'jpeg',
+                  'png',
+                  'webp',
+                  'heic',
+                  'heif',
+                ],
                 allowMultiple: true,
               ),
               icon: const Icon(Icons.folder_open_outlined, size: 18),
@@ -1834,7 +2036,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     );
   }
 
-  Widget _buildGenericSelectStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildGenericSelectStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -1862,7 +2068,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
         ),
         const SizedBox(height: 20),
         ElevatedButton.icon(
-          onPressed: () => _pickFilesFromDevice(allowedExtensions: ['pdf'], allowMultiple: false),
+          onPressed: () => _pickFilesFromDevice(
+            allowedExtensions: ['pdf'],
+            allowMultiple: false,
+          ),
           icon: const Icon(Icons.folder_open_outlined),
           label: const Text('Browse Device Storage'),
         ),
@@ -1870,7 +2079,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     );
   }
 
-  Widget _buildOptionsStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildOptionsStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     return _buildPlaceholder(
       title: 'Options',
       subtitle: 'Options configuration ready.',
@@ -1880,7 +2093,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     );
   }
 
-  Widget _buildProgressStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildProgressStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     return _buildPlaceholder(
       title: 'Processing',
       subtitle: 'On-device engine ready.',
@@ -1890,7 +2107,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     );
   }
 
-  Widget _buildResultStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildResultStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     return _buildPlaceholder(
       title: 'Result',
       subtitle: 'Processing complete.',
@@ -1922,10 +2143,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
         const SizedBox(height: 16),
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 6),
         Text(

@@ -1,8 +1,4 @@
-enum PageFilter {
-  original,
-  grayscale,
-  blackAndWhite,
-}
+enum PageFilter { original, grayscale, blackAndWhite }
 
 class ScannedPage {
   final String id;
@@ -24,7 +20,9 @@ class ScannedPage {
 
   /// Returns true if this page has any user modifications
   bool get isModified =>
-      croppedPath != null || rotationDegrees != 0 || filter != PageFilter.original;
+      croppedPath != null ||
+      rotationDegrees != 0 ||
+      filter != PageFilter.original;
 
   ScannedPage copyWith({
     String? id,
@@ -43,9 +41,7 @@ class ScannedPage {
   }
 
   ScannedPage rotate90() {
-    return copyWith(
-      rotationDegrees: (rotationDegrees + 90) % 360,
-    );
+    return copyWith(rotationDegrees: (rotationDegrees + 90) % 360);
   }
 
   ScannedPage applyFilter(PageFilter newFilter) {
@@ -79,9 +75,11 @@ class DocumentEditorState {
   int get pageCount => pages.length;
 
   ScannedPage? get currentPage =>
-      (pages.isNotEmpty && selectedPageIndex >= 0 && selectedPageIndex < pages.length)
-          ? pages[selectedPageIndex]
-          : null;
+      (pages.isNotEmpty &&
+          selectedPageIndex >= 0 &&
+          selectedPageIndex < pages.length)
+      ? pages[selectedPageIndex]
+      : null;
 
   DocumentEditorState copyWith({
     String? documentTitle,
@@ -101,31 +99,42 @@ class DocumentEditorState {
     );
   }
 
-  DocumentEditorState updateCurrentPage(ScannedPage Function(ScannedPage) transform) {
-    if (pages.isEmpty || selectedPageIndex < 0 || selectedPageIndex >= pages.length) {
+  DocumentEditorState updateCurrentPage(
+    ScannedPage Function(ScannedPage) transform,
+  ) {
+    if (pages.isEmpty ||
+        selectedPageIndex < 0 ||
+        selectedPageIndex >= pages.length) {
       return this;
     }
     final updatedPages = List<ScannedPage>.from(pages);
-    updatedPages[selectedPageIndex] = transform(updatedPages[selectedPageIndex]);
+    updatedPages[selectedPageIndex] = transform(
+      updatedPages[selectedPageIndex],
+    );
     return copyWith(pages: updatedPages);
   }
 
   DocumentEditorState removeCurrentPage() {
-    if (pages.isEmpty || selectedPageIndex < 0 || selectedPageIndex >= pages.length) {
+    if (pages.isEmpty ||
+        selectedPageIndex < 0 ||
+        selectedPageIndex >= pages.length) {
       return this;
     }
-    final updatedPages = List<ScannedPage>.from(pages)..removeAt(selectedPageIndex);
+    final updatedPages = List<ScannedPage>.from(pages)
+      ..removeAt(selectedPageIndex);
     final nextIndex = updatedPages.isEmpty
         ? 0
-        : (selectedPageIndex >= updatedPages.length ? updatedPages.length - 1 : selectedPageIndex);
-    return copyWith(
-      pages: updatedPages,
-      selectedPageIndex: nextIndex,
-    );
+        : (selectedPageIndex >= updatedPages.length
+              ? updatedPages.length - 1
+              : selectedPageIndex);
+    return copyWith(pages: updatedPages, selectedPageIndex: nextIndex);
   }
 
   DocumentEditorState reorderPages(int oldIndex, int newIndex) {
-    if (oldIndex < 0 || oldIndex >= pages.length || newIndex < 0 || newIndex > pages.length) {
+    if (oldIndex < 0 ||
+        oldIndex >= pages.length ||
+        newIndex < 0 ||
+        newIndex > pages.length) {
       return this;
     }
     final updatedPages = List<ScannedPage>.from(pages);
@@ -139,16 +148,15 @@ class DocumentEditorState {
     int newSelectedIndex = selectedPageIndex;
     if (selectedPageIndex == oldIndex) {
       newSelectedIndex = targetIndex;
-    } else if (oldIndex < selectedPageIndex && targetIndex >= selectedPageIndex) {
+    } else if (oldIndex < selectedPageIndex &&
+        targetIndex >= selectedPageIndex) {
       newSelectedIndex -= 1;
-    } else if (oldIndex > selectedPageIndex && targetIndex <= selectedPageIndex) {
+    } else if (oldIndex > selectedPageIndex &&
+        targetIndex <= selectedPageIndex) {
       newSelectedIndex += 1;
     }
 
-    return copyWith(
-      pages: updatedPages,
-      selectedPageIndex: newSelectedIndex,
-    );
+    return copyWith(pages: updatedPages, selectedPageIndex: newSelectedIndex);
   }
 
   DocumentEditorState addPages(List<String> newPaths) {

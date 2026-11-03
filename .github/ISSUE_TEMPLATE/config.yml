@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: GitHub Issues
+    url: https://github.com/KrocPDF/App/issues/new/choose
+    about: Ask questions, file bug reports, or suggest enhancements.
+  - name: Security Vulnerability Reporting
+    url: mailto:security@krocpdf.com
+    about: Privately report a security vulnerability to the security team.

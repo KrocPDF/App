@@ -56,7 +56,8 @@ final GoRouter _router = GoRouter(
                       builder: (context, state) {
                         final toolId = state.pathParameters['toolId'] ?? '';
                         final format = state.uri.queryParameters['format'];
-                        final initialFilePath = state.uri.queryParameters['initialFilePath'];
+                        final initialFilePath =
+                            state.uri.queryParameters['initialFilePath'];
                         return ToolFlowScreen(
                           toolId: toolId,
                           format: format,
@@ -125,7 +126,8 @@ Future<void> launchDocumentScanner(BuildContext context, WidgetRef ref) async {
   } on PlatformException catch (e) {
     if (context.mounted) {
       final isPlayServices =
-          e.code.contains('PLAY_SERVICES') || (e.message?.contains('Play Services') == true);
+          e.code.contains('PLAY_SERVICES') ||
+          (e.message?.contains('Play Services') == true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -141,7 +143,9 @@ Future<void> launchDocumentScanner(BuildContext context, WidgetRef ref) async {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Camera scanner unavailable on this device. You can use "Image to PDF" to import files.'),
+          content: Text(
+            'Camera scanner unavailable on this device. You can use "Image to PDF" to import files.',
+          ),
           duration: Duration(seconds: 4),
         ),
       );
@@ -160,9 +164,7 @@ class ScanLandingScreen extends ConsumerWidget {
     final borderColor = theme.colorScheme.outline;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Document Scanner'),
-      ),
+      appBar: AppBar(title: const Text('Document Scanner')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
@@ -224,10 +226,7 @@ class ScanLandingScreen extends ConsumerWidget {
 class AppCoreSkeleton extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
-  const AppCoreSkeleton({
-    super.key,
-    required this.navigationShell,
-  });
+  const AppCoreSkeleton({super.key, required this.navigationShell});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -274,13 +273,18 @@ class AppCoreSkeleton extends ConsumerWidget {
                           // Home Tab - always returns to the Home root grid
                           Expanded(
                             child: _SkeletonNavItem(
-                              icon: isHome ? Icons.home_rounded : Icons.home_outlined,
+                              icon: isHome
+                                  ? Icons.home_rounded
+                                  : Icons.home_outlined,
                               label: 'Home',
                               isSelected: isHome,
                               activeColor: activeColor,
                               inactiveColor: inactiveColor,
                               onTap: () {
-                                navigationShell.goBranch(0, initialLocation: true);
+                                navigationShell.goBranch(
+                                  0,
+                                  initialLocation: true,
+                                );
                               },
                             ),
                           ),
@@ -291,13 +295,18 @@ class AppCoreSkeleton extends ConsumerWidget {
                           // Files Tab
                           Expanded(
                             child: _SkeletonNavItem(
-                              icon: isFiles ? Icons.folder_rounded : Icons.folder_outlined,
+                              icon: isFiles
+                                  ? Icons.folder_rounded
+                                  : Icons.folder_outlined,
                               label: 'Files',
                               isSelected: isFiles,
                               activeColor: activeColor,
                               inactiveColor: inactiveColor,
                               onTap: () {
-                                navigationShell.goBranch(2, initialLocation: true);
+                                navigationShell.goBranch(
+                                  2,
+                                  initialLocation: true,
+                                );
                               },
                             ),
                           ),
@@ -330,7 +339,9 @@ class AppCoreSkeleton extends ConsumerWidget {
                               shape: BoxShape.circle,
                               color: isDark ? Colors.white : Colors.black,
                               border: Border.all(
-                                color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFE5E5E5),
+                                color: isDark
+                                    ? const Color(0xFF1A1A1A)
+                                    : const Color(0xFFE5E5E5),
                                 width: 3.5,
                               ),
                               boxShadow: [
@@ -387,11 +398,7 @@ class _SkeletonNavItem extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            size: 22,
-            color: isSelected ? activeColor : inactiveColor,
-          ),
+          Icon(icon, size: 22, color: isSelected ? activeColor : inactiveColor),
           const SizedBox(height: 3),
           Text(
             label,
@@ -406,5 +413,3 @@ class _SkeletonNavItem extends StatelessWidget {
     );
   }
 }
-
-

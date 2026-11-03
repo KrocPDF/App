@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../domain/app_mode.dart';
 
 class ModeSelector extends ConsumerWidget {
@@ -23,7 +24,8 @@ class ModeSelector extends ConsumerWidget {
         children: [
           Expanded(
             child: InkWell(
-              onTap: () => ref.read(appModeProvider.notifier).state = AppMode.confidential,
+              onTap: () => ref.read(appModeProvider.notifier).state =
+                  AppMode.confidential,
               borderRadius: BorderRadius.circular(4),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -53,7 +55,8 @@ class ModeSelector extends ConsumerWidget {
           const SizedBox(width: 4),
           Expanded(
             child: Tooltip(
-              message: 'Non-Confidential Mode will be available in a later phase.',
+              message:
+                  'Non-Confidential Mode will be available in a later phase.',
               child: Opacity(
                 opacity: 0.5,
                 child: Container(
@@ -80,7 +83,10 @@ class ModeSelector extends ConsumerWidget {
                       ),
                       const SizedBox(width: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
                           border: Border.all(color: borderColor, width: 0.5),
                           borderRadius: BorderRadius.circular(3),

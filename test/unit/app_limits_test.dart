@@ -16,10 +16,14 @@ void main() {
 
     test('FileValidationService rejects files exceeding limit', () {
       const validator = LocalFileValidationService();
-      final validResult = validator.validateSizeBytes(AppLimits.maxLocalFileBytes);
+      final validResult = validator.validateSizeBytes(
+        AppLimits.maxLocalFileBytes,
+      );
       expect(validResult.isSuccess, isTrue);
 
-      final oversizedResult = validator.validateSizeBytes(AppLimits.maxLocalFileBytes + 1);
+      final oversizedResult = validator.validateSizeBytes(
+        AppLimits.maxLocalFileBytes + 1,
+      );
       expect(oversizedResult.isFailure, isTrue);
       expect(oversizedResult.errorOrNull?.message, contains('100 MB'));
     });

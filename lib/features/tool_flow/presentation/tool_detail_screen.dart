@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../home/domain/tool_item.dart';
 
 class ToolDetailScreen extends StatelessWidget {
@@ -34,9 +35,7 @@ class ToolDetailScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(tool.title),
-      ),
+      appBar: AppBar(title: Text(tool.title)),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 580),
@@ -91,7 +90,9 @@ class ToolDetailScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF141414) : const Color(0xFFF7F7F7),
+                    color: isDark
+                        ? const Color(0xFF141414)
+                        : const Color(0xFFF7F7F7),
                     border: Border.all(color: borderColor, width: 1),
                     borderRadius: BorderRadius.circular(6),
                   ),
@@ -107,10 +108,7 @@ class ToolDetailScreen extends StatelessWidget {
               const SizedBox(height: 24),
               const Text(
                 'Select Format',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
               ...tool.supportedFormats.map((format) {
@@ -122,7 +120,10 @@ class ToolDetailScreen extends StatelessWidget {
                       context.push('/tool/${tool.id}/flow?format=$query');
                     },
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
