@@ -14,3 +14,4 @@
 - PDF toolkit: merge, split, view, convert, edit, and compress.
 - Image conversion and editing (JPG, PNG, HEIC, WEBP).
 - Local persistent file management (save, view, share, print, delete).
+

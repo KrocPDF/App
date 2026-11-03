@@ -17,3 +17,4 @@
 
 ## Cloud Integrations (Planned)
 - Remote PDF conversion endpoint for heavy document formats (DOCX/XLSX/PPTX) in Non-Confidential Mode.
+

@@ -13,3 +13,4 @@
 - **Limits & Guardrails:** Never hardcode size or threshold values; reference `AppLimits` (`AppLimits.maxLocalFileBytes`).
 - **Feature Independence:** Vertical feature folders (`features/<name>/{presentation, domain, data}`) keep features self-contained.
 - **Dependency Injections:** Riverpod providers defined near domain/presentation boundaries.
+

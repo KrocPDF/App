@@ -18,3 +18,4 @@ Tests reside in the `test/` directory and are structured as follows:
 3. **Execution Commands:**
    - Static analysis: `flutter analyze`
    - Run full test suite: `flutter test`
+

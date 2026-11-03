@@ -31,3 +31,4 @@
 ├── flutter_native_splash.yaml # Splash screen configuration
 └── pubspec.yaml               # Pinned package dependencies and project metadata
 ```
+

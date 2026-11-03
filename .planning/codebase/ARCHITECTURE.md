@@ -31,3 +31,4 @@ lib/
 2. **Declarative Routing via `go_router`:** StatefulShellRoute provides persistent bottom navigation between Home and Files while child routes handle tools and flows.
 3. **Pluggable Processing Engines:** The `ProcessingService` abstract contract decouples execution from presentation logic.
 4. **Strict Error Isolation:** Sealed `AppError` instances encapsulate processing, file-size, and permission errors exhaustively.
+

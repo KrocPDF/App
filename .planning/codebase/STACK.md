@@ -24,3 +24,4 @@
 - **Android:** Verified (`minSdkVersion = 24`, `targetSdkVersion = 35`).
 - **iOS:** Configured (Deployment target `13.0`, bundle identifier `com.krocpdf.app`).
 - **Web:** Configured with local browser preview support in Brave / Chrome (`web/index.html`).
+
