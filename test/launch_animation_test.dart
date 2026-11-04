@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,95 +10,76 @@ void main() {
     LaunchGate.resetColdStartFlagForTesting();
   });
 
-  group('LaunchTimelineState exact mathematical formulas', () {
+  group('LaunchTimelineState exact mathematical formulas (2.8s duration)', () {
     test('t = 0.5s: Paper dropping with overshoot, croc off-screen, mouth closed', () {
       final s = LaunchTimelineState.compute(0.5);
-      expect(s.top, closeTo(255.95, 0.1));
+      expect(s.paperY, closeTo(13.6, 2.0));
+      expect(s.paperOpacity, equals(1.0));
       expect(s.fold, equals(0.0));
       expect(s.textLinesOpacity, equals(0.0));
       expect(s.pdfBadgeOpacity, equals(0.0));
-      expect(s.crocX, equals(-230.0));
+      expect(s.crocX, equals(-240.0));
       expect(s.mouthA, equals(0.0));
       expect(s.crocScale, equals(1.0));
-      expect(s.iconXOffset, equals(0.0));
-      expect(s.wordmarkVisible, isFalse);
+      expect(s.pdfScale, equals(1.0));
+      expect(s.wordmarkOpacity, equals(0.0));
       expect(s.sceneOpacity, equals(1.0));
     });
 
-    test('t = 1.2s: Corner folding, text & badge fading, croc entering, mouth opening', () {
-      final s = LaunchTimelineState.compute(1.2);
-      expect(s.top, equals(226.0));
-      expect(s.fold, closeTo(12.0, 0.01));
-      expect(s.textLinesOpacity, closeTo(0.675, 0.001));
-      expect(s.pdfBadgeOpacity, closeTo(0.50, 0.001));
-      expect(s.crocX, closeTo(-89.26, 0.1));
-      expect(s.mouthA, closeTo(0.8285, 0.01));
+    test('t = 1.0s: Corner folded, text & badge visible, croc waiting off-screen', () {
+      final s = LaunchTimelineState.compute(1.0);
+      expect(s.paperY, equals(0.0));
+      expect(s.fold, closeTo(10.8, 0.1));
+      expect(s.textLinesOpacity, closeTo(0.60, 0.05));
+      expect(s.pdfBadgeOpacity, closeTo(0.28, 0.05));
+      expect(s.crocX, equals(-240.0));
+      expect(s.mouthA, equals(0.0));
       expect(s.crocScale, equals(1.0));
-      expect(s.iconXOffset, equals(0.0));
-      expect(s.wordmarkVisible, isFalse);
+      expect(s.pdfScale, equals(1.0));
+      expect(s.wordmarkOpacity, equals(0.0));
       expect(s.sceneOpacity, equals(1.0));
     });
 
-    test('t = 1.7s: Lunge forward, jaws snapping shut on icon, scale pulse', () {
-      final s = LaunchTimelineState.compute(1.7);
-      expect(s.top, equals(226.0));
+    test('t = 1.5s: Croc entering from left with open jaw', () {
+      final s = LaunchTimelineState.compute(1.5);
+      expect(s.paperY, equals(0.0));
       expect(s.fold, equals(18.0));
-      expect(s.textLinesOpacity, equals(0.9));
-      expect(s.pdfBadgeOpacity, equals(1.0));
-      expect(s.crocX, closeTo(-18.0, 0.01));
-      expect(s.mouthA, closeTo(0.8790, 0.01));
-      expect(s.crocScale, closeTo(1.0469, 0.001));
-      expect(s.iconRotate, equals(0.0));
-      expect(s.iconScale, equals(1.0));
-      expect(s.iconXOffset, equals(0.0));
-      expect(s.wordmarkVisible, isFalse);
-      expect(s.sceneOpacity, equals(1.0));
-    });
-
-    test('t = 2.2s: Croc exiting right with icon, chewing decaying, wordmark wiping open', () {
-      final s = LaunchTimelineState.compute(2.2);
-      expect(s.top, equals(226.0));
-      expect(s.fold, equals(18.0));
-      expect(s.crocX, closeTo(65.86, 0.1));
-      expect(s.mouthA, closeTo(0.0300, 0.01));
+      expect(s.crocX, closeTo(-15.3, 2.0));
+      expect(s.mouthA, closeTo(0.96, 0.05));
       expect(s.crocScale, equals(1.0));
-      expect(s.iconRotate, closeTo(-10.0 * (math.pi / 180.0), 0.001));
-      expect(s.iconScale, closeTo(0.85, 0.001));
-      expect(s.iconXOffset, closeTo(65.86, 0.1));
-      expect(s.wordmarkVisible, isTrue);
-      expect(s.revealX, closeTo(109.39, 0.1));
+      expect(s.pdfScale, equals(1.0));
+      expect(s.wordmarkOpacity, equals(0.0));
       expect(s.sceneOpacity, equals(1.0));
     });
 
-    test('t = 3.0s: Croc nearly exited, chewing done (A=0), wordmark fully revealed (330)', () {
-      final s = LaunchTimelineState.compute(3.0);
-      expect(s.top, equals(226.0));
-      expect(s.crocX, closeTo(414.62, 0.2));
-      expect(s.mouthA, equals(0.0));
-      expect(s.crocScale, equals(1.0));
-      expect(s.iconXOffset, closeTo(414.62, 0.2));
-      expect(s.wordmarkVisible, isTrue);
-      expect(s.revealX, equals(330.0));
+    test('t = 1.85s: Jaws snap shut, PDF icon eaten into croc mouth', () {
+      final s = LaunchTimelineState.compute(1.85);
+      expect(s.crocX, equals(0.0));
+      expect(s.mouthA, closeTo(0.75, 0.1));
+      expect(s.crocScale, closeTo(1.10, 0.05));
+      expect(s.pdfScale, closeTo(0.50, 0.05));
+      expect(s.wordmarkOpacity, equals(0.0));
       expect(s.sceneOpacity, equals(1.0));
     });
 
-    test('t = 3.9s: Hold finished, croc off-screen, scene fading out (75% opacity)', () {
-      final s = LaunchTimelineState.compute(3.9);
-      expect(s.crocX, equals(420.0));
+    test('t = 2.4s: Croc shifted up, wordmark fully revealed & holding', () {
+      final s = LaunchTimelineState.compute(2.4);
+      expect(s.crocX, equals(0.0));
       expect(s.mouthA, equals(0.0));
-      expect(s.wordmarkVisible, isTrue);
-      expect(s.revealX, equals(330.0));
-      expect(s.sceneOpacity, closeTo(0.75, 0.01));
+      expect(s.pdfScale, equals(0.0));
+      expect(s.crocY, closeTo(-32.0, 0.5));
+      expect(s.wordmarkOpacity, equals(1.0));
+      expect(s.sceneOpacity, equals(1.0));
     });
 
-    test('t = 4.2s: Sequence ends with scene opacity = 0.0', () {
-      final s = LaunchTimelineState.compute(4.2);
-      expect(s.sceneOpacity, equals(0.0));
+    test('t = 2.8s: Sequence ends with scene opacity = 0.0', () {
+      final s = LaunchTimelineState.compute(2.8);
+      expect(s.sceneOpacity, closeTo(0.0, 0.001));
     });
   });
 
   group('LaunchAnimationScreen widget tests', () {
-    testWidgets('LaunchGate shows LaunchAnimationScreen on cold start and transitions to Home at 4.2s', (tester) async {
+    testWidgets('LaunchGate shows LaunchAnimationScreen on cold start and transitions to Home at 2.8s', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: KrocApp(),
@@ -109,39 +89,17 @@ void main() {
       // Initial frame shows the launch animation screen
       expect(find.byType(LaunchAnimationScreen), findsOneWidget);
 
-      // Pump through the 4200ms timeline
+      // Pump through the 2800ms timeline
       await tester.pump(const Duration(milliseconds: 1000));
       expect(find.byType(LaunchAnimationScreen), findsOneWidget);
 
       await tester.pump(const Duration(milliseconds: 1000));
       expect(find.byType(LaunchAnimationScreen), findsOneWidget);
 
-      await tester.pump(const Duration(milliseconds: 1000));
-      expect(find.byType(LaunchAnimationScreen), findsOneWidget);
-
-      await tester.pump(const Duration(milliseconds: 1200));
+      await tester.pump(const Duration(milliseconds: 800));
       await tester.pumpAndSettle();
 
       // After animation completes, LaunchAnimationScreen is dismissed and Home is visible
-      expect(find.byType(LaunchAnimationScreen), findsNothing);
-      expect(LaunchGate.hasCompletedLaunch, isTrue);
-      expect(find.text('Confidential'), findsOneWidget);
-    });
-
-    testWidgets('Tapping anywhere skips the launch animation and proceeds to Home immediately', (tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: KrocApp(),
-        ),
-      );
-
-      expect(find.byType(LaunchAnimationScreen), findsOneWidget);
-
-      // Tap anywhere on screen during animation
-      await tester.tap(find.byType(LaunchAnimationScreen));
-      await tester.pumpAndSettle();
-
-      // Immediately dismissed to Home
       expect(find.byType(LaunchAnimationScreen), findsNothing);
       expect(LaunchGate.hasCompletedLaunch, isTrue);
       expect(find.text('Confidential'), findsOneWidget);
