@@ -19,21 +19,16 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.krocpdf.app/launch_params")
             .setMethodCallHandler { call, result ->
                 if (call.method == "getDebugT") {
-                    val floatT = intent?.getFloatExtra("t", -1f) ?: -1f
-                    if (floatT >= 0f) {
-                        result.success(floatT.toDouble())
-                    } else {
-                        val doubleT = intent?.getDoubleExtra("t", -1.0) ?: -1.0
-                        if (doubleT >= 0.0) {
-                            result.success(doubleT)
-                        } else {
-                            val strT = intent?.getStringExtra("t")?.toDoubleOrNull()
-                            if (strT != null && strT >= 0.0) {
-                                result.success(strT)
-                            } else {
-                                result.success(null)
-                            }
+                    try {
+                        val raw = intent?.extras?.get("t")
+                        val tVal = when (raw) {
+                            is Number -> raw.toDouble()
+                            is String -> raw.toDoubleOrNull()
+                            else -> null
                         }
+                        result.success(tVal)
+                    } catch (e: Exception) {
+                        result.success(null)
                     }
                 } else {
                     result.notImplemented()

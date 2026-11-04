@@ -275,6 +275,10 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final logoAsset = isDark ? 'assets/splash/logo_dark.png' : 'assets/splash/logo.png';
+    precacheImage(AssetImage(logoAsset), context);
+
     final disableAnimations = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     if (widget.debugT != null) {
       _controller.stop();
@@ -425,7 +429,7 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
 
                         // 2. Paper Document Icon (Drops 0-0.8s, folds 0.8-1.4s, bitten 1.7-1.9s, carried from 1.85s)
                         Positioned(
-                          left: 154.0 + state.iconXOffset,
+                          left: 149.0 + state.iconXOffset,
                           top: state.top,
                           child: Transform.rotate(
                             angle: state.iconRotate,
@@ -444,20 +448,37 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
                         // 3. Crocodile (Enters from left 1.0-1.6s, mouth opens, lunges 1.6-1.85s, bites & carries icon, exits right)
                         Positioned(
                           left: state.crocX,
-                          top: 142.0, // Aligns jaw cleft center with paper center Y = 266.0 (142 + 124 = 266)
+                          top: 164.0, // Aligns jaw hinge (60.2, 116.4) with paper center Y = 266.0
                           child: Transform.scale(
                             scale: state.crocScale,
-                            origin: const Offset(60.5, 116.4),
+                            origin: const Offset(60.2, 116.4),
                             child: SizedBox(
                               width: 200,
                               height: 200,
                               child: Stack(
                                 clipBehavior: Clip.none,
                                 children: [
-                                  // 1. Lower Jaw (rotates +16° * A around hinge (60.5, 116.4))
+                                  // 1. Solid, unified Upper Head (all 3 back crests, skull roof, eye, upper snout, top teeth)
+                                  // Stays 100% rigid and intact to prevent any skull fracturing or disconnected teeth.
+                                  ClipPath(
+                                    clipper: const _UpperHeadClipper(),
+                                    child: Image.asset(
+                                      logoAsset,
+                                      width: 200,
+                                      height: 200,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        WidgetsBinding.instance.addPostFrameCallback((_) => _finish());
+                                        return const SizedBox.shrink();
+                                      },
+                                    ),
+                                  ),
+
+                                  // 2. Articulating Lower Jaw (lower mandible and bottom teeth)
+                                  // Hinges cleanly at Offset(60.2, 116.4) by +16° * A.
                                   Transform.rotate(
                                     angle: 16.0 * (math.pi / 180.0) * state.mouthA,
-                                    origin: const Offset(60.5, 116.4),
+                                    origin: const Offset(60.2, 116.4),
                                     child: ClipPath(
                                       clipper: const _LowerJawClipper(),
                                       child: Image.asset(
@@ -470,21 +491,6 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
                                           return const SizedBox.shrink();
                                         },
                                       ),
-                                    ),
-                                  ),
-
-                                  // 2. Upper Head (Stationary: 3 crests, skull, eye, snout, top teeth)
-                                  ClipPath(
-                                    clipper: const _UpperHeadClipper(),
-                                    child: Image.asset(
-                                      logoAsset,
-                                      width: 200,
-                                      height: 200,
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        WidgetsBinding.instance.addPostFrameCallback((_) => _finish());
-                                        return const SizedBox.shrink();
-                                      },
                                     ),
                                   ),
                                 ],
@@ -505,8 +511,9 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
   }
 }
 
-/// Cuts the stationary upper head of the crocodile (all 3 back crests,
-/// the skull, eye, snout ridge, and top teeth) that remains rock-solid.
+/// Cuts the solid, unified upper head (skull, 3 crests, eye, upper snout, and top teeth).
+/// The skull remains completely intact and rigid throughout the animation, preventing
+/// any visual fractures, disconnections, or broken jaw outlines.
 class _UpperHeadClipper extends CustomClipper<Path> {
   const _UpperHeadClipper();
 
@@ -518,11 +525,12 @@ class _UpperHeadClipper extends CustomClipper<Path> {
 
     path.moveTo(0, 0);
     path.lineTo(size.width, 0);
-    path.lineTo(size.width, 104.3 * sy);
-    path.lineTo(84.0 * sx, 104.3 * sy);
-    path.lineTo(60.5 * sx, 116.4 * sy);
-    path.lineTo(60.5 * sx, 145.0 * sy);
-    path.lineTo(0, 145.0 * sy);
+    path.lineTo(size.width, 105.0 * sy);
+    path.lineTo(120.0 * sx, 105.0 * sy);
+    path.lineTo(80.0 * sx, 104.5 * sy);
+    path.lineTo(60.2 * sx, 116.4 * sy);
+    path.lineTo(60.2 * sx, size.height);
+    path.lineTo(0, size.height);
     path.close();
     return path;
   }
@@ -531,7 +539,8 @@ class _UpperHeadClipper extends CustomClipper<Path> {
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
-/// Cuts the articulating lower jaw and bottom teeth along the mouth cleft.
+/// Cuts the articulating lower jaw and bottom teeth along the exact mouth cleft.
+/// Hinges seamlessly at Offset(60.2, 116.4) at the back vertex of the mouth cavity.
 class _LowerJawClipper extends CustomClipper<Path> {
   const _LowerJawClipper();
 
@@ -541,12 +550,12 @@ class _LowerJawClipper extends CustomClipper<Path> {
     final sx = size.width / 200.0;
     final sy = size.height / 200.0;
 
-    path.moveTo(35.0 * sx, 135.0 * sy);
-    path.lineTo(60.5 * sx, 116.4 * sy);
-    path.lineTo(84.0 * sx, 104.3 * sy);
-    path.lineTo(size.width, 104.3 * sy);
+    path.moveTo(60.2 * sx, size.height);
+    path.lineTo(60.2 * sx, 116.4 * sy);
+    path.lineTo(80.0 * sx, 104.5 * sy);
+    path.lineTo(120.0 * sx, 105.0 * sy);
+    path.lineTo(size.width, 105.0 * sy);
     path.lineTo(size.width, size.height);
-    path.lineTo(35.0 * sx, size.height);
     path.close();
     return path;
   }
