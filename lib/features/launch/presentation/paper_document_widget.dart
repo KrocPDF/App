@@ -1,91 +1,106 @@
 import 'package:flutter/material.dart';
 
-/// A paper document widget that animates a dog-ear fold and reveals
-/// a bold PDF badge, representing the transformation from paper to PDF.
+/// A paper document widget matching the KrocPDF branded launch icon:
+/// White sheet of paper with clean dog-ear fold, 3 text lines on top,
+/// and a solid black badge with bold white "PDF" text on the bottom.
 class PaperDocumentWidget extends StatelessWidget {
-  final double foldProgress; // 0.0 (flat paper) to 1.0 (folded PDF)
+  final double fold; // Corner fold size in pixels (0.0 to 18.0)
+  final double textLinesOpacity; // 0.0 to 0.9
+  final double pdfBadgeOpacity; // 0.0 to 1.0
   final bool isDark;
 
   const PaperDocumentWidget({
     super.key,
-    required this.foldProgress,
+    this.fold = 0.0,
+    this.textLinesOpacity = 0.0,
+    this.pdfBadgeOpacity = 0.0,
     required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    const width = 74.0;
-    const height = 98.0;
+    const width = 62.0;
+    const height = 80.0;
 
-    final paperBg = isDark ? const Color(0xFF222222) : const Color(0xFFFFFFFF);
-    final borderColor = isDark ? const Color(0xFF555555) : const Color(0xFF1E1E1E);
-    final lineColors = isDark ? const Color(0xFF444444) : const Color(0xFFE0E0E0);
-    final foldFlapColor = isDark ? const Color(0xFF333333) : const Color(0xFFEDEDED);
+    // Both light and dark theme use a crisp white sheet of paper
+    // matching the official logo/reference design
+    const paperBg = Color(0xFFFFFFFF);
+    const borderColor = Color(0xFF1E1E1E);
+    final lineColor = isDark ? const Color(0xFF444444) : const Color(0xFF222222);
+    const foldFlapColor = Color(0xFFEBEBEB);
 
     return SizedBox(
       width: width,
       height: height,
       child: CustomPaint(
         painter: _PaperPainter(
-          foldProgress: foldProgress,
+          fold: fold,
           paperColor: paperBg,
           borderColor: borderColor,
           foldFlapColor: foldFlapColor,
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 16, 10, 12),
+          padding: const EdgeInsets.fromLTRB(6, 12, 6, 8),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // PDF Badge (scales & fades in as paper folds)
+              // 1. Three placeholder text lines on top
               Opacity(
-                opacity: foldProgress.clamp(0.0, 1.0),
-                child: Transform.scale(
-                  scale: 0.6 + (0.4 * foldProgress.clamp(0.0, 1.0)),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFFE53935) : const Color(0xFFD32F2F),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'PDF',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 10.5,
-                        letterSpacing: 0.8,
+                opacity: textLinesOpacity.clamp(0.0, 1.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 2.5,
+                      width: 28,
+                      decoration: BoxDecoration(
+                        color: lineColor,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
+                    const SizedBox(height: 3.5),
+                    Container(
+                      height: 2.5,
+                      width: 44,
+                      decoration: BoxDecoration(
+                        color: lineColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 3.5),
+                    Container(
+                      height: 2.5,
+                      width: 44,
+                      decoration: BoxDecoration(
+                        color: lineColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              // 2. Solid black badge with bold white "PDF" text on bottom
+              Opacity(
+                opacity: pdfBadgeOpacity.clamp(0.0, 1.0),
+                child: Container(
+                  width: 44,
+                  height: 25,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF000000),
+                    borderRadius: BorderRadius.circular(4.5),
                   ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              // Document text placeholder lines
-              Container(
-                height: 3,
-                width: 44,
-                decoration: BoxDecoration(
-                  color: lineColors,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 5),
-              Container(
-                height: 3,
-                width: 32,
-                decoration: BoxDecoration(
-                  color: lineColors,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 5),
-              Container(
-                height: 3,
-                width: 38,
-                decoration: BoxDecoration(
-                  color: lineColors,
-                  borderRadius: BorderRadius.circular(2),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'PDF',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12.0,
+                      letterSpacing: 0.5,
+                      height: 1.1,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -97,13 +112,13 @@ class PaperDocumentWidget extends StatelessWidget {
 }
 
 class _PaperPainter extends CustomPainter {
-  final double foldProgress;
+  final double fold;
   final Color paperColor;
   final Color borderColor;
   final Color foldFlapColor;
 
   _PaperPainter({
-    required this.foldProgress,
+    required this.fold,
     required this.paperColor,
     required this.borderColor,
     required this.foldFlapColor,
@@ -111,8 +126,8 @@ class _PaperPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    const double radius = 6.0;
-    final double maxFold = 20.0 * foldProgress.clamp(0.0, 1.0);
+    const double radius = 5.0;
+    final double maxFold = fold.clamp(0.0, 18.0);
 
     final fillPaint = Paint()
       ..color = paperColor
@@ -126,7 +141,7 @@ class _PaperPainter extends CustomPainter {
     final path = Path();
     path.moveTo(radius, 0);
 
-    if (maxFold > 0) {
+    if (maxFold > 0.5) {
       // Top edge up to fold start
       path.lineTo(size.width - maxFold, 0);
       // Slanted fold edge to right side
@@ -149,18 +164,18 @@ class _PaperPainter extends CustomPainter {
     path.arcToPoint(Offset(radius, 0), radius: const Radius.circular(radius));
     path.close();
 
-    // Draw shadow under paper
+    // Draw shadow under paper for clean separation on white background
     final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.08)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    canvas.drawPath(path.shift(const Offset(0, 4)), shadowPaint);
+      ..color = Colors.black.withValues(alpha: 0.12)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    canvas.drawPath(path.shift(const Offset(0, 2)), shadowPaint);
 
-    // Draw paper body
+    // Draw paper body and clean border
     canvas.drawPath(path, fillPaint);
     canvas.drawPath(path, borderPaint);
 
     // Draw the triangular folded corner flap
-    if (maxFold > 1) {
+    if (maxFold > 1.0) {
       final flapPath = Path();
       flapPath.moveTo(size.width - maxFold, 0);
       flapPath.lineTo(size.width - maxFold, maxFold);
@@ -178,7 +193,7 @@ class _PaperPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _PaperPainter oldDelegate) {
-    return oldDelegate.foldProgress != foldProgress ||
+    return oldDelegate.fold != fold ||
         oldDelegate.paperColor != paperColor ||
         oldDelegate.borderColor != borderColor;
   }

@@ -8,6 +8,7 @@ import 'core/theme/app_theme.dart';
 import 'features/files/presentation/files_screen.dart';
 import 'features/files/presentation/pdf_viewer_screen.dart';
 import 'features/home/presentation/home_screen.dart';
+import 'features/launch/presentation/launch_animation_screen.dart';
 import 'features/launch/presentation/launch_gate.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/tool_flow/presentation/document_editor_screen.dart';
@@ -17,6 +18,17 @@ import 'features/tool_flow/presentation/tool_flow_screen.dart';
 final GoRouter _router = GoRouter(
   initialLocation: '/',
   routes: [
+    GoRoute(
+      path: '/launch-preview',
+      builder: (context, state) {
+        final tStr = state.uri.queryParameters['t'];
+        final t = tStr != null ? double.tryParse(tStr) : 0.0;
+        return LaunchAnimationScreen(
+          onComplete: () => context.go('/'),
+          debugT: t,
+        );
+      },
+    ),
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsScreen(),
