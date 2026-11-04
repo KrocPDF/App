@@ -8,6 +8,7 @@ import 'core/theme/app_theme.dart';
 import 'features/files/presentation/files_screen.dart';
 import 'features/files/presentation/pdf_viewer_screen.dart';
 import 'features/home/presentation/home_screen.dart';
+import 'features/launch/presentation/launch_gate.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/tool_flow/presentation/document_editor_screen.dart';
 import 'features/tool_flow/presentation/tool_detail_screen.dart';
@@ -107,6 +108,9 @@ class KrocApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       routerConfig: _router,
+      builder: (context, child) {
+        return LaunchGate(child: child ?? const SizedBox.shrink());
+      },
     );
   }
 }
