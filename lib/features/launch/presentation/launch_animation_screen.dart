@@ -59,94 +59,102 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
 
       _controller = AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 3000),
+        duration: const Duration(milliseconds: 3200),
       );
 
-      // Stage 1: Paper drops in from top (0.00 -> 0.23: 0ms - 700ms)
+      // Stage 1: Paper drops in from top (0.00 -> 0.20: 0ms - 640ms)
       _paperDropY = Tween<double>(begin: -320.0, end: 0.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.00, 0.23, curve: Curves.easeOutBack),
+          curve: const Interval(0.00, 0.20, curve: Curves.easeOutBack),
         ),
       );
       _paperOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.00, 0.08, curve: Curves.easeIn),
+          curve: const Interval(0.00, 0.07, curve: Curves.easeIn),
         ),
       );
 
-      // Stage 2: Paper folds into PDF document icon (0.23 -> 0.43: 700ms - 1300ms)
+      // Stage 2: Paper folds into PDF document icon (0.20 -> 0.39: 640ms - 1248ms)
       _paperFold = Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.23, 0.43, curve: Curves.easeInOutCubic),
+          curve: const Interval(0.20, 0.39, curve: Curves.easeInOutCubic),
         ),
       );
 
-      // Stage 3: Crocodile enters from left (0.43 -> 0.70: 1300ms - 2100ms)
-      _crocSlideX = Tween<double>(begin: -280.0, end: 0.0).animate(
+      // Stage 3: Crocodile enters from left, lunges & chomps PDF (0.39 -> 0.61: 1248ms - 1952ms)
+      // Enters from left (-260 -> -30), lunges forward (+30), then settles at center (0)
+      _crocSlideX = TweenSequence<double>([
+        TweenSequenceItem(tween: Tween<double>(begin: -260.0, end: -30.0).chain(CurveTween(curve: Curves.easeOutCubic)), weight: 55),
+        TweenSequenceItem(tween: Tween<double>(begin: -30.0, end: 25.0).chain(CurveTween(curve: Curves.easeInOutQuad)), weight: 25),
+        TweenSequenceItem(tween: Tween<double>(begin: 25.0, end: 0.0).chain(CurveTween(curve: Curves.easeOutQuad)), weight: 20),
+      ]).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.43, 0.65, curve: Curves.easeOutCubic),
+          curve: const Interval(0.39, 0.61),
         ),
       );
+
       _crocOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.43, 0.52, curve: Curves.easeIn),
+          curve: const Interval(0.39, 0.47, curve: Curves.easeIn),
         ),
       );
-      // Crocodile lunge & bite motion
+
+      // Crocodile chomp scale pulse
       _crocLungeScale = TweenSequence<double>([
         TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 1.18).chain(CurveTween(curve: Curves.easeOutQuad)), weight: 50),
         TweenSequenceItem(tween: Tween<double>(begin: 1.18, end: 1.0).chain(CurveTween(curve: Curves.easeInQuad)), weight: 50),
       ]).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.55, 0.67),
+          curve: const Interval(0.50, 0.61),
         ),
       );
 
-      // PDF icon shrinks & disappears into croc mouth (0.57 -> 0.68)
+      // PDF icon shrinks & disappears into croc mouth (0.50 -> 0.60: 1600ms - 1920ms)
       _pdfShrinkScale = Tween<double>(begin: 1.0, end: 0.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.57, 0.68, curve: Curves.easeInBack),
+          curve: const Interval(0.50, 0.60, curve: Curves.easeInBack),
         ),
       );
       _pdfShrinkOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.57, 0.66, curve: Curves.easeIn),
+          curve: const Interval(0.50, 0.58, curve: Curves.easeIn),
         ),
       );
 
-      // Stage 4: Crocodile shifts up, wordmark reveals & holds (0.70 -> 0.90: 2100ms - 2700ms)
+      // Stage 4: Crocodile shifts up, wordmark reveals & holds (0.61 -> 0.89: 1952ms - 2848ms)
       _crocCenterY = Tween<double>(begin: 0.0, end: -36.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.70, 0.78, curve: Curves.easeOutCubic),
+          curve: const Interval(0.61, 0.68, curve: Curves.easeOutCubic),
         ),
       );
       _wordmarkOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.72, 0.82, curve: Curves.easeOut),
+          curve: const Interval(0.63, 0.70, curve: Curves.easeOut),
         ),
       );
-      _wordmarkSlideY = Tween<double>(begin: 18.0, end: 0.0).animate(
+      _wordmarkSlideY = Tween<double>(begin: 16.0, end: 0.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.72, 0.82, curve: Curves.easeOutCubic),
+          curve: const Interval(0.63, 0.70, curve: Curves.easeOutCubic),
         ),
       );
+      // NOTE: From 0.70 to 0.89 (608ms), all animations hold completely stationary!
 
-      // Stage 5: Cross-fade entire screen to reveal Home (0.90 -> 1.00: 2700ms - 3000ms)
+      // Stage 5: Cross-fade entire screen to reveal Home (0.89 -> 1.00: 2848ms - 3200ms)
       _screenFadeOut = Tween<double>(begin: 1.0, end: 0.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: const Interval(0.90, 1.00, curve: Curves.easeIn),
+          curve: const Interval(0.89, 1.00, curve: Curves.easeIn),
         ),
       );
 
