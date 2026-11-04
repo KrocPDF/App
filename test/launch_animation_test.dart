@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,71 +10,60 @@ void main() {
     LaunchGate.resetColdStartFlagForTesting();
   });
 
-  group('LaunchTimelineState exact mathematical formulas (4.2s duration)', () {
-    test('t = 0.5s: Paper dropping with overshoot, croc off-screen, mouth closed', () {
-      final s = LaunchTimelineState.compute(0.5);
-      expect(s.paperY, closeTo(14.06, 0.1));
+  group('LaunchTimelineState exact mathematical formulas (3.2s duration)', () {
+    test('t = 0.4s: Paper dropping from top', () {
+      final s = LaunchTimelineState.compute(0.4);
+      expect(s.paperY, closeTo(16.0, 0.1));
       expect(s.paperOpacity, equals(1.0));
       expect(s.fold, equals(0.0));
-      expect(s.textLinesOpacity, equals(0.0));
-      expect(s.pdfBadgeOpacity, equals(0.0));
-      expect(s.crocX, equals(-230.0));
+      expect(s.crocX, equals(-280.0));
       expect(s.mouthA, equals(0.0));
-      expect(s.crocScale, equals(1.0));
-      expect(s.iconRotate, equals(0.0));
+      expect(s.pdfScale, equals(1.0));
       expect(s.sceneOpacity, equals(1.0));
     });
 
-    test('t = 1.0s: Corner folded, text & badge visible, croc entering', () {
-      final s = LaunchTimelineState.compute(1.0);
+    test('t = 0.8s: Corner folded, badge visible', () {
+      final s = LaunchTimelineState.compute(0.8);
       expect(s.paperY, equals(0.0));
-      expect(s.fold, closeTo(6.0, 0.1));
-      expect(s.textLinesOpacity, closeTo(0.22, 0.05));
-      expect(s.pdfBadgeOpacity, equals(0.0));
-      expect(s.crocX, equals(-230.0));
-      expect(s.mouthA, equals(0.0));
-      expect(s.crocScale, equals(1.0));
-      expect(s.iconRotate, equals(0.0));
-      expect(s.sceneOpacity, equals(1.0));
+      expect(s.fold, closeTo(9.0, 0.1));
+      expect(s.textLinesOpacity, closeTo(0.54, 0.05));
+      expect(s.pdfBadgeOpacity, closeTo(0.40, 0.05));
+      expect(s.crocX, equals(-280.0));
+      expect(s.pdfScale, equals(1.0));
     });
 
-    test('t = 1.5s: Croc entering from left with open jaw', () {
+    test('t = 1.5s: Croc at -20 with mouth wide open around paper', () {
       final s = LaunchTimelineState.compute(1.5);
       expect(s.paperY, equals(0.0));
       expect(s.fold, equals(18.0));
-      expect(s.crocX, closeTo(-30.93, 0.1));
+      expect(s.crocX, closeTo(-20.0, 0.1));
       expect(s.mouthA, closeTo(1.0, 0.05));
-      expect(s.crocScale, equals(1.0));
-      expect(s.iconRotate, equals(0.0));
+      expect(s.pdfScale, equals(1.0));
+      expect(s.pdfOpacity, equals(1.0));
+    });
+
+    test('t = 1.7s: Jaws clamped shut, PDF file eaten', () {
+      final s = LaunchTimelineState.compute(1.7);
+      expect(s.mouthA, closeTo(0.0, 0.001));
+      expect(s.pdfScale, closeTo(0.0, 0.001));
+      expect(s.pdfOpacity, closeTo(0.0, 0.001));
+    });
+
+    test('t = 2.4s: Croc moving rightward, wordmark revealing', () {
+      final s = LaunchTimelineState.compute(2.4);
+      expect(s.crocX, greaterThan(300.0));
+      expect(s.revealProgress, closeTo(0.85, 0.1));
       expect(s.sceneOpacity, equals(1.0));
     });
 
-    test('t = 1.85s: Jaws clamped, PDF icon tilted -10°', () {
-      final s = LaunchTimelineState.compute(1.85);
-      expect(s.crocX, equals(0.0));
-      expect(s.mouthA, equals(0.0));
-      expect(s.crocScale, closeTo(1.04, 0.05));
-      expect(s.iconRotate, closeTo(-10.0 * (math.pi / 180.0), 0.001));
-      expect(s.iconScale, closeTo(0.85, 0.01));
-      expect(s.iconXOffset, closeTo(-12.0, 0.01));
-      expect(s.sceneOpacity, equals(1.0));
-    });
-
-    test('t = 3.0s: Croc exiting to the right, wordmark fully revealed', () {
-      final s = LaunchTimelineState.compute(3.0);
-      expect(s.crocX, greaterThan(350.0));
-      expect(s.revealProgress, equals(1.0));
-      expect(s.sceneOpacity, equals(1.0));
-    });
-
-    test('t = 4.2s: Sequence ends with scene opacity = 0.0', () {
-      final s = LaunchTimelineState.compute(4.2);
+    test('t = 3.2s: Sequence ends with scene opacity = 0.0', () {
+      final s = LaunchTimelineState.compute(3.2);
       expect(s.sceneOpacity, closeTo(0.0, 0.001));
     });
   });
 
   group('LaunchAnimationScreen widget tests', () {
-    testWidgets('LaunchGate shows LaunchAnimationScreen on cold start and transitions to Home at 4.2s', (tester) async {
+    testWidgets('LaunchGate shows LaunchAnimationScreen on cold start and transitions to Home at 3.2s', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: KrocApp(),
@@ -85,14 +73,14 @@ void main() {
       // Initial frame shows the launch animation screen
       expect(find.byType(LaunchAnimationScreen), findsOneWidget);
 
-      // Pump through the 4200ms timeline
-      await tester.pump(const Duration(milliseconds: 1500));
-      expect(find.byType(LaunchAnimationScreen), findsOneWidget);
-
-      await tester.pump(const Duration(milliseconds: 1500));
+      // Pump through the 3200ms timeline
+      await tester.pump(const Duration(milliseconds: 1000));
       expect(find.byType(LaunchAnimationScreen), findsOneWidget);
 
       await tester.pump(const Duration(milliseconds: 1200));
+      expect(find.byType(LaunchAnimationScreen), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 1000));
       await tester.pumpAndSettle();
 
       // After animation completes, LaunchAnimationScreen is dismissed and Home is visible
