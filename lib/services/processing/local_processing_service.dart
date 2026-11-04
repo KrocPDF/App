@@ -12,6 +12,7 @@ import '../../core/result/result.dart';
 import '../../features/files/data/files_repository.dart';
 import '../../features/tool_flow/domain/scanned_document.dart';
 import '../image_conversion_service.dart';
+import '../pdf_compression_service.dart';
 import 'processing_service.dart';
 
 class LocalProcessingService implements ProcessingService {
@@ -59,6 +60,25 @@ class LocalProcessingService implements ProcessingService {
         ));
       } catch (e) {
         return Failure(ProcessingFailed(reason: 'Failed to convert image: $e'));
+      }
+    }
+
+    if (request.toolId == 'compress_pdf') {
+      try {
+        if (request.filePaths.isEmpty) {
+          return const Failure(ProcessingFailed(reason: 'No input PDF provided for compression.'));
+        }
+        const compressor = PdfCompressionService();
+        final result = await compressor.compressPdf(
+          inputPath: request.filePaths.first,
+          quality: 65,
+        );
+        return Success(ProcessingResult(
+          outputFilePath: result.outputPath,
+          message: 'PDF compressed successfully (${result.reductionPercentage.toStringAsFixed(1)}% reduction).',
+        ));
+      } catch (e) {
+        return Failure(ProcessingFailed(reason: 'Failed to compress PDF: $e'));
       }
     }
 
