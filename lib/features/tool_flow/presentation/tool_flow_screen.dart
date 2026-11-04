@@ -13,6 +13,7 @@ import '../../../core/result/result.dart';
 import '../../../core/utils/storage_permission_helper.dart';
 import '../../../services/file_validation_service.dart';
 import '../../../services/image_conversion_service.dart';
+import '../../../services/pdf_compression_service.dart';
 import '../../files/data/files_repository.dart';
 import '../../files/domain/saved_document.dart';
 import '../../home/domain/tool_item.dart';
@@ -60,6 +61,17 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
   ConvertedImageResult? _conversionResult;
   bool _isSavedToFiles = false;
 
+  // Compress PDF flow state
+  final PdfCompressionService _compressService = const PdfCompressionService();
+  PdfCompressionPreset _compressionPreset = PdfCompressionPreset.recommended;
+  int _compressQuality = 65;
+  bool _isCompressing = false;
+  String _compressStage = '';
+  double? _compressProgress;
+  String? _compressError;
+  CompressedPdfResult? _compressResult;
+  bool _isCompressedSavedToFiles = false;
+
   // Multi-tool files state
   final List<File> _selectedFiles = [];
 
@@ -101,6 +113,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
   }
 
   bool get _isImageConvert => widget.toolId == 'image_convert';
+  bool get _isCompressPdf => widget.toolId == 'compress_pdf';
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -651,6 +664,112 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     }
   }
 
+  Future<void> _startCompression() async {
+    if (_selectedFiles.isEmpty) return;
+    final file = _selectedFiles.first;
+    if (!file.existsSync()) {
+      setState(() {
+        _compressError = 'Selected PDF file no longer exists on disk.';
+      });
+      return;
+    }
+
+    setState(() {
+      _currentStepIndex = 2;
+      _isCompressing = true;
+      _compressError = null;
+      _compressStage = 'Analyzing PDF structure...';
+      _compressProgress = 0.1;
+      _isCompressedSavedToFiles = false;
+    });
+
+    try {
+      final result = await _compressService.compressPdf(
+        inputPath: file.path,
+        quality: _compressQuality,
+        onProgress: (status, progress) {
+          if (mounted) {
+            setState(() {
+              _compressStage = status;
+              _compressProgress = progress;
+            });
+          }
+        },
+      );
+
+      if (mounted) {
+        setState(() {
+          _compressResult = result;
+          _isCompressing = false;
+          _currentStepIndex = 3;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _compressError = e.toString();
+          _isCompressing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleShareCompressedPdf() async {
+    if (_compressResult == null) return;
+    final file = File(_compressResult!.outputPath);
+    if (!await file.exists()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Compressed PDF file not found on disk.')),
+        );
+      }
+      return;
+    }
+    // ignore: deprecated_member_use
+    await Share.shareXFiles(
+      [XFile(_compressResult!.outputPath)],
+    );
+  }
+
+  Future<void> _handleDownloadCompressedPdf() async {
+    if (_compressResult == null || _isCompressedSavedToFiles) return;
+    final file = File(_compressResult!.outputPath);
+    if (!await file.exists()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Compressed PDF file not found on disk.')),
+        );
+      }
+      return;
+    }
+
+    try {
+      await ref.read(savedFilesProvider.notifier).addExternalFile(
+        file,
+        customTitle: _compressResult!.fileName,
+        sourceType: SavedDocumentSource.compress,
+      );
+
+      if (mounted) {
+        setState(() {
+          _isCompressedSavedToFiles = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Saved "${_compressResult!.fileName}" to Files.'),
+            backgroundColor: Colors.green.shade700,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save file: $e')),
+        );
+      }
+    }
+  }
+
   void _resetFlow() {
     setState(() {
       _currentStepIndex = 0;
@@ -661,6 +780,16 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       _conversionResult = null;
       _isConverting = false;
       _isSavedToFiles = false;
+
+      _compressQuality = 65;
+      _compressionPreset = PdfCompressionPreset.recommended;
+      _isCompressing = false;
+      _compressStage = '';
+      _compressProgress = null;
+      _compressError = null;
+      _compressResult = null;
+      _isCompressedSavedToFiles = false;
+
       _selectedFiles.clear();
     });
   }
@@ -681,6 +810,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     if (_isImageConvert) {
       canGoNext =
           (_currentStepIndex == 0 && _selectedImagePath != null) ||
+          (_currentStepIndex == 1);
+    } else if (_isCompressPdf) {
+      canGoNext = (_currentStepIndex == 0 && _selectedFiles.isNotEmpty) ||
           (_currentStepIndex == 1);
     } else if (widget.toolId == 'office_to_pdf') {
       // Office to PDF is UI scaffolding only in this phase
@@ -721,7 +853,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                     return Expanded(
                       child: InkWell(
                         onTap: () {
-                          if (_isConverting) return;
+                          if (_isConverting || _isCompressing) return;
                           if (_isImageConvert) {
                             if (index == 0) {
                               setState(() => _currentStepIndex = index);
@@ -733,6 +865,16 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                               _startConversion();
                             } else if (index == 3 &&
                                 _conversionResult != null) {
+                              setState(() => _currentStepIndex = index);
+                            }
+                          } else if (_isCompressPdf) {
+                            if (index == 0) {
+                              setState(() => _currentStepIndex = index);
+                            } else if (index == 1 && _selectedFiles.isNotEmpty) {
+                              setState(() => _currentStepIndex = index);
+                            } else if (index == 2 && _selectedFiles.isNotEmpty) {
+                              _startCompression();
+                            } else if (index == 3 && _compressResult != null) {
                               setState(() => _currentStepIndex = index);
                             }
                           } else {
@@ -796,7 +938,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    if (_currentStepIndex > 0 && !_isConverting)
+                    if (_currentStepIndex > 0 && !_isConverting && !_isCompressing)
                       OutlinedButton(
                         onPressed: () => setState(() => _currentStepIndex--),
                         child: const Text('Back'),
@@ -809,6 +951,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                             ? () {
                                 if (_isImageConvert && _currentStepIndex == 1) {
                                   _startConversion();
+                                } else if (_isCompressPdf && _currentStepIndex == 1) {
+                                  _startCompression();
                                 } else {
                                   setState(() => _currentStepIndex++);
                                 }
@@ -817,13 +961,15 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                         child: Text(
                           _isImageConvert && _currentStepIndex == 1
                               ? 'Convert to $_targetFormat'
-                              : 'Next step',
+                              : _isCompressPdf && _currentStepIndex == 1
+                                  ? 'Compress PDF'
+                                  : 'Next step',
                         ),
                       )
                     else
                       ElevatedButton(
                         onPressed: _resetFlow,
-                        child: const Text('Convert another'),
+                        child: Text(_isCompressPdf ? 'Compress another' : 'Convert another'),
                       ),
                   ],
                 ),
@@ -850,6 +996,21 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
           return _buildImageConvertProgressStep(context, borderColor, isDark);
         case 3:
           return _buildImageConvertResultStep(context, borderColor, isDark);
+        default:
+          return const SizedBox.shrink();
+      }
+    }
+
+    if (_isCompressPdf) {
+      switch (_currentStepIndex) {
+        case 0:
+          return _buildSelectFilesStep(context, borderColor, isDark);
+        case 1:
+          return _buildCompressPdfOptionsStep(context, borderColor, isDark);
+        case 2:
+          return _buildCompressPdfProgressStep(context, borderColor, isDark);
+        case 3:
+          return _buildCompressPdfResultStep(context, borderColor, isDark);
         default:
           return const SizedBox.shrink();
       }
@@ -2118,6 +2279,487 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       icon: Icons.check_circle_outline,
       borderColor: borderColor,
       isDark: isDark,
+    );
+  }
+
+  // --- Compress PDF Specific Steps ---
+
+  String _getQualityDescriptor(int q) {
+    if (q <= 40) return '(Smallest Size)';
+    if (q <= 70) return '(Balanced)';
+    return '(High Quality)';
+  }
+
+  Widget _buildPresetChip({
+    required String label,
+    required String sublabel,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Color borderColor,
+    required bool isDark,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? Colors.white : Colors.black)
+              : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5)),
+          border: Border.all(
+            color: isSelected ? Colors.transparent : borderColor,
+            width: 1,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+                color: isSelected
+                    ? (isDark ? Colors.black : Colors.white)
+                    : (isDark ? Colors.white : Colors.black),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              sublabel,
+              style: TextStyle(
+                fontSize: 10,
+                color: isSelected
+                    ? (isDark ? Colors.black87 : Colors.white70)
+                    : (isDark ? Colors.white54 : Colors.black54),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompressPdfOptionsStep(BuildContext context, Color borderColor, bool isDark) {
+    if (_selectedFiles.isEmpty) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.warning_amber_rounded, size: 36, color: Colors.orange),
+          const SizedBox(height: 12),
+          const Text('No PDF file selected.', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: () => setState(() => _currentStepIndex = 0),
+            child: const Text('Back to file selection'),
+          ),
+        ],
+      );
+    }
+
+    final file = _selectedFiles.first;
+    final fileName = file.uri.pathSegments.isNotEmpty
+        ? file.uri.pathSegments.last
+        : 'document.pdf';
+    final fileSizeBytes = file.existsSync() ? file.lengthSync() : 0;
+    final formattedSize = fileSizeBytes < 1024 * 1024
+        ? '${(fileSizeBytes / 1024).toStringAsFixed(1)} KB'
+        : '${(fileSizeBytes / (1024 * 1024)).toStringAsFixed(2)} MB';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // File summary card
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF141414) : const Color(0xFFF9F9F9),
+            border: Border.all(color: borderColor, width: 1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9500).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFF9500), size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fileName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Input PDF Ready • $formattedSize',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+
+        const Text(
+          'Compression Preset',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Choose an optimization level for size vs. clarity:',
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.white60 : Colors.black54,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Preset Chips
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            _buildPresetChip(
+              label: 'Recommended',
+              sublabel: 'Balanced (65%)',
+              isSelected: _compressionPreset == PdfCompressionPreset.recommended,
+              onTap: () {
+                setState(() {
+                  _compressionPreset = PdfCompressionPreset.recommended;
+                  _compressQuality = 65;
+                });
+              },
+              borderColor: borderColor,
+              isDark: isDark,
+            ),
+            _buildPresetChip(
+              label: 'Extreme',
+              sublabel: 'Smallest size (40%)',
+              isSelected: _compressionPreset == PdfCompressionPreset.extreme,
+              onTap: () {
+                setState(() {
+                  _compressionPreset = PdfCompressionPreset.extreme;
+                  _compressQuality = 40;
+                });
+              },
+              borderColor: borderColor,
+              isDark: isDark,
+            ),
+            _buildPresetChip(
+              label: 'Basic',
+              sublabel: 'High quality (80%)',
+              isSelected: _compressionPreset == PdfCompressionPreset.basic,
+              onTap: () {
+                setState(() {
+                  _compressionPreset = PdfCompressionPreset.basic;
+                  _compressQuality = 80;
+                });
+              },
+              borderColor: borderColor,
+              isDark: isDark,
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 22),
+
+        // Quality Slider
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Compression Quality',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            Text(
+              '$_compressQuality% ${_getQualityDescriptor(_compressQuality)}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white70 : Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        Slider(
+          value: _compressQuality.toDouble(),
+          min: 20,
+          max: 95,
+          divisions: 15,
+          label: '$_compressQuality%',
+          onChanged: (val) {
+            final q = val.round();
+            setState(() {
+              _compressQuality = q;
+              if (q == 65) {
+                _compressionPreset = PdfCompressionPreset.recommended;
+              } else if (q == 40) {
+                _compressionPreset = PdfCompressionPreset.extreme;
+              } else if (q == 80) {
+                _compressionPreset = PdfCompressionPreset.basic;
+              } else {
+                _compressionPreset = PdfCompressionPreset.custom;
+              }
+            });
+          },
+        ),
+
+        const SizedBox(height: 12),
+
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF161616) : const Color(0xFFF4F4F4),
+            border: Border.all(color: borderColor, width: 0.8),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            'Compresses images and optimizes PDF streams entirely on-device (100% confidential). Never sends documents to the cloud.',
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompressPdfProgressStep(BuildContext context, Color borderColor, bool isDark) {
+    if (_compressError != null) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 44, color: Colors.redAccent),
+          const SizedBox(height: 14),
+          const Text(
+            'Compression Failed',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              _compressError!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              OutlinedButton(
+                onPressed: () => setState(() => _currentStepIndex = 1),
+                child: const Text('Back to options'),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: _startCompression,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        CircularProgressIndicator(
+          color: isDark ? Colors.white : Colors.black,
+          strokeWidth: 2.5,
+        ),
+        const SizedBox(height: 22),
+        Text(
+          _compressStage.isNotEmpty ? _compressStage : 'Optimizing PDF...',
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          textAlign: TextAlign.center,
+        ),
+        if (_compressProgress != null) ...[
+          const SizedBox(height: 14),
+          SizedBox(
+            width: 220,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: _compressProgress,
+                minHeight: 4,
+                color: isDark ? Colors.white : Colors.black,
+                backgroundColor: isDark ? Colors.white12 : Colors.black12,
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        Text(
+          'Processing document locally on your device.',
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.white60 : Colors.black54,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompressPdfResultStep(BuildContext context, Color borderColor, bool isDark) {
+    final res = _compressResult;
+    if (res == null) {
+      return const Center(child: Text('No result available.'));
+    }
+
+    final isOptimal = res.isAlreadyOptimal;
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: isOptimal
+                ? Colors.blue.withValues(alpha: 0.15)
+                : Colors.green.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            isOptimal ? Icons.thumb_up_alt_outlined : Icons.check,
+            size: 30,
+            color: isOptimal ? Colors.blueAccent : Colors.green,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          isOptimal ? 'Document Already Optimal!' : 'Compression Completed!',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          isOptimal
+              ? 'This PDF is already at optimal size. Original quality preserved.'
+              : 'Successfully reduced file size by ${res.reductionPercentage.toStringAsFixed(1)}%',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.white60 : Colors.black54,
+          ),
+        ),
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF141414) : const Color(0xFFFAFAFA),
+            border: Border.all(color: borderColor, width: 1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9500).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFF9500), size: 30),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                res.fileName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Original: ${res.formattedOriginalSize}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white54 : Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward, size: 14, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Compressed: ${res.formattedSize}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              if (!isOptimal) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '-${res.reductionPercentage.toStringAsFixed(1)}% space saved',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: 12,
+          runSpacing: 10,
+          alignment: WrapAlignment.center,
+          children: [
+            ElevatedButton.icon(
+              onPressed: _isCompressedSavedToFiles ? null : _handleDownloadCompressedPdf,
+              icon: Icon(_isCompressedSavedToFiles ? Icons.check : Icons.download_outlined, size: 18),
+              label: Text(_isCompressedSavedToFiles ? 'Saved to Files' : 'Save to Files'),
+            ),
+            ElevatedButton.icon(
+              onPressed: _handleShareCompressedPdf,
+              icon: const Icon(Icons.share_outlined, size: 18),
+              label: const Text('Share PDF'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _resetFlow,
+              icon: const Icon(Icons.refresh_outlined, size: 18),
+              label: const Text('Compress Another'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
