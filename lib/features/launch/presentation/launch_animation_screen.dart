@@ -45,8 +45,13 @@ class EaseInOutQuadCurve extends Curve {
   }
 }
 
-/// Computes the exact mathematical state of the launch sequence at second [t] (0.0 to 4.2s).
-/// Every value is a pure function of t.
+/// Computes the exact mathematical state of the launch sequence at second [t] (0.0 to 3.2s).
+/// Sequence:
+/// 1. Paper drops in middle of screen (0.0 - 0.6s)
+/// 2. Converts into PDF file (0.6 - 1.0s)
+/// 3. Crocodile comes from left, opens mouth, and eats that file (1.0 - 1.7s)
+/// 4. Crocodile moves rightward and reveals the word "KrocPDF" (1.7 - 2.5s)
+/// 5. Wordmark holds and cross-fades to Home (2.5 - 3.2s)
 class LaunchTimelineState {
   final double t;
   final double paperY;
@@ -57,9 +62,8 @@ class LaunchTimelineState {
   final double crocX;
   final double crocScale;
   final double mouthA;
-  final double iconRotate;
-  final double iconScale;
-  final double iconXOffset;
+  final double pdfScale;
+  final double pdfOpacity;
   final double revealProgress;
   final double sceneOpacity;
 
@@ -73,9 +77,8 @@ class LaunchTimelineState {
     required this.crocX,
     required this.crocScale,
     required this.mouthA,
-    required this.iconRotate,
-    required this.iconScale,
-    required this.iconXOffset,
+    required this.pdfScale,
+    required this.pdfOpacity,
     required this.revealProgress,
     required this.sceneOpacity,
   });
@@ -88,95 +91,88 @@ class LaunchTimelineState {
   static double _lerp(double a, double b, double p) => a + (b - a) * p;
 
   factory LaunchTimelineState.compute(double t) {
-    final clampedT = t.clamp(0.0, 4.2);
+    final clampedT = t.clamp(0.0, 3.2);
 
-    // 0 to 0.8s: Paper drops in from top with easeOutBack
-    final double paperY = _lerp(-200.0, 0.0, easeOutBackCurve.transform(_clamp01(clampedT / 0.8)));
-    final double paperOpacity = _clamp01(clampedT / 0.2);
+    // 1. Paper drops in from top to middle (0.0 to 0.6s)
+    final double pDrop = _clamp01(clampedT / 0.6);
+    final double paperY = _lerp(-240.0, 0.0, easeOutBackCurve.transform(pDrop));
+    final double paperOpacity = _clamp01(clampedT / 0.15);
 
-    // 0.8 to 1.4s: Corner dog-ear folds to 18px
-    final double fold = _clamp01((clampedT - 0.8) / 0.6) * 18.0;
+    // 2. Corner folds into PDF document (0.6 to 1.0s)
+    final double pFold = _clamp01((clampedT - 0.6) / 0.4);
+    final double fold = pFold * 18.0;
+    final double textLinesOpacity = _clamp01((clampedT - 0.65) / 0.25) * 0.9;
+    final double pdfBadgeOpacity = _clamp01((clampedT - 0.70) / 0.25);
 
-    // 0.9 to 1.3s: Text lines fade in
-    final double textLinesOpacity = _clamp01((clampedT - 0.9) / 0.4) * 0.9;
-
-    // 1.0 to 1.4s: "PDF" badge fades in
-    final double pdfBadgeOpacity = _clamp01((clampedT - 1.0) / 0.4);
-
-    // Crocodile X translation:
-    // 1.0 to 1.6s: enters from -230 to -30
-    // 1.6 to 1.85s: lunges forward to center (0.0)
-    // 1.85 to 3.1s: exits right off-screen (0 to 420)
+    // 3. Crocodile enters from left to mouth-on-paper (1.0 to 1.5s)
+    // When crocX = -20, crocodile mouth cavity perfectly centers over the PDF file
     final double crocX;
     if (clampedT < 1.0) {
-      crocX = -230.0;
-    } else if (clampedT <= 1.6) {
-      crocX = _lerp(-230.0, -30.0, easeOutCubicCurve.transform(_clamp01((clampedT - 1.0) / 0.6)));
-    } else if (clampedT <= 1.85) {
-      crocX = _lerp(-30.0, 0.0, _clamp01((clampedT - 1.6) / 0.25));
-    } else if (clampedT <= 3.1) {
-      crocX = _lerp(0.0, 420.0, easeInOutQuadCurve.transform(_clamp01((clampedT - 1.85) / 1.25)));
+      crocX = -280.0;
+    } else if (clampedT <= 1.5) {
+      crocX = _lerp(-280.0, -20.0, easeOutCubicCurve.transform(_clamp01((clampedT - 1.0) / 0.5)));
+    } else if (clampedT <= 1.7) {
+      crocX = _lerp(-20.0, -10.0, _clamp01((clampedT - 1.5) / 0.2));
+    } else if (clampedT <= 2.5) {
+      // Moves rightward off-screen
+      crocX = _lerp(-10.0, 380.0, easeInOutQuadCurve.transform(_clamp01((clampedT - 1.7) / 0.8)));
     } else {
-      crocX = 420.0;
+      crocX = 380.0;
     }
 
-    // Crocodile scale pulse on bite (1.6 to 1.95s)
+    // Mouth Opening parameter A:
+    // 1.0 to 1.5s: opens wide
+    // 1.5 to 1.7s: snaps shut on the file
+    // 1.7 to 2.2s: chewing settle while walking off
+    final double mouthA;
+    if (clampedT < 1.0) {
+      mouthA = 0.0;
+    } else if (clampedT <= 1.5) {
+      mouthA = easeOutCubicCurve.transform(_clamp01((clampedT - 1.0) / 0.45));
+    } else if (clampedT <= 1.7) {
+      final pShut = _clamp01((clampedT - 1.5) / 0.2);
+      mouthA = 1.0 - (pShut * pShut);
+    } else if (clampedT <= 2.2) {
+      final chewP = _clamp01((clampedT - 1.7) / 0.5);
+      mouthA = 0.15 * math.sin(chewP * 3 * math.pi).abs() * (1.0 - chewP);
+    } else {
+      mouthA = 0.0;
+    }
+
+    // Scale pulse on bite (1.5 to 1.75s)
     final double crocScale;
-    if (clampedT >= 1.6 && clampedT <= 1.95) {
-      crocScale = 1.0 + 0.06 * math.sin(_clamp01((clampedT - 1.6) / 0.35) * math.pi);
+    if (clampedT >= 1.5 && clampedT <= 1.75) {
+      crocScale = 1.0 + 0.08 * math.sin(_clamp01((clampedT - 1.5) / 0.25) * math.pi);
     } else {
       crocScale = 1.0;
     }
 
-    // Mouth Opening parameter A (0.0 = closed, 1.0 = open):
-    // 1.0 to 1.62s: mouth opens (reaches 1.0 at 1.45s and holds until 1.62s)
-    // 1.62 to 1.85s: jaws clamp shut to 0 by 1.85s
-    // 1.85 to 2.2s: subtle chewing settle
-    final double mouthA;
-    if (clampedT < 1.0) {
-      mouthA = 0.0;
-    } else if (clampedT <= 1.62) {
-      mouthA = easeOutCubicCurve.transform(_clamp01((clampedT - 1.0) / 0.45));
-    } else if (clampedT <= 1.85) {
-      mouthA = 1.0 - easeOutCubicCurve.transform(_clamp01((clampedT - 1.62) / 0.23));
-    } else if (clampedT <= 2.2) {
-      final chewP = _clamp01((clampedT - 1.85) / 0.35);
-      mouthA = 0.22 * math.sin(chewP * 2 * math.pi) * (1.0 - chewP);
+    // PDF file is EATEN (disappears upon bite: 1.5 to 1.7s)
+    final double pdfScale;
+    final double pdfOpacity;
+    if (clampedT < 1.5) {
+      pdfScale = 1.0;
+      pdfOpacity = 1.0;
+    } else if (clampedT <= 1.7) {
+      final pEat = _clamp01((clampedT - 1.5) / 0.20);
+      pdfScale = 1.0 - pEat;
+      pdfOpacity = 1.0 - pEat;
     } else {
-      mouthA = 0.0;
+      pdfScale = 0.0;
+      pdfOpacity = 0.0;
     }
 
-    // PDF Icon reacts when bitten (1.65 to 1.85s):
-    // rotates -10 deg, scales down to 0.85, shifts left -12px
-    final double iconRotate;
-    final double iconScale;
-    final double iconXOffset;
-    if (clampedT < 1.65) {
-      iconRotate = 0.0;
-      iconScale = 1.0;
-      iconXOffset = 0.0;
-    } else if (clampedT <= 1.85) {
-      final p = _clamp01((clampedT - 1.65) / 0.20);
-      iconRotate = -10.0 * (math.pi / 180.0) * p;
-      iconScale = 1.0 - 0.15 * p;
-      iconXOffset = -12.0 * p;
-    } else {
-      iconRotate = -10.0 * (math.pi / 180.0);
-      iconScale = 0.85;
-      iconXOffset = -12.0;
-    }
+    // 4. Wordmark reveals as crocodile moves rightward (1.8 to 2.6s)
+    final double revealProgress = _clamp01((clampedT - 1.8) / 0.7);
 
-    // Wordmark reveals from left-to-right behind exiting crocodile (1.85 to 2.85s)
-    final double revealProgress = _clamp01((clampedT - 1.85) / 1.0);
-
-    // Scene cross-fade out (3.8 to 4.2s)
+    // 5. Scene cross-fade out (2.9 to 3.2s)
     final double sceneOpacity;
-    if (clampedT < 3.8) {
+    if (clampedT < 2.9) {
       sceneOpacity = 1.0;
-    } else if (clampedT >= 4.2) {
+    } else if (clampedT >= 3.2) {
       sceneOpacity = 0.0;
     } else {
-      sceneOpacity = (1.0 - _clamp01((clampedT - 3.8) / 0.4)).clamp(0.0, 1.0);
+      sceneOpacity = (1.0 - _clamp01((clampedT - 2.9) / 0.3)).clamp(0.0, 1.0);
     }
 
     return LaunchTimelineState(
@@ -189,9 +185,8 @@ class LaunchTimelineState {
       crocX: crocX,
       crocScale: crocScale,
       mouthA: mouthA,
-      iconRotate: iconRotate,
-      iconScale: iconScale,
-      iconXOffset: iconXOffset,
+      pdfScale: pdfScale,
+      pdfOpacity: pdfOpacity,
       revealProgress: revealProgress,
       sceneOpacity: sceneOpacity,
     );
@@ -245,13 +240,13 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
 
     try {
       if (widget.debugT == null) {
-        // 6s watchdog safety net
-        _watchdogTimer = Timer(const Duration(milliseconds: 6000), () => _finish('watchdog'));
+        // 5s watchdog safety net
+        _watchdogTimer = Timer(const Duration(milliseconds: 5000), () => _finish('watchdog'));
       }
 
       _controller = AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 4200),
+        duration: const Duration(milliseconds: 3200),
       );
 
       int lastLogged = 0;
@@ -268,22 +263,22 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
 
         final double currentSeconds;
         if (_isTestEnvironment) {
-          currentSeconds = (elapsed.inMicroseconds / 1000000.0).clamp(0.0, 4.2);
+          currentSeconds = (elapsed.inMicroseconds / 1000000.0).clamp(0.0, 3.2);
         } else {
-          currentSeconds = (_stopwatch.elapsedMicroseconds / 1000000.0).clamp(0.0, 4.2);
+          currentSeconds = (_stopwatch.elapsedMicroseconds / 1000000.0).clamp(0.0, 3.2);
         }
 
-        final progress = (currentSeconds / 4.2).clamp(0.0, 1.0);
+        final progress = (currentSeconds / 3.2).clamp(0.0, 1.0);
         _controller.value = progress;
 
-        if (progress >= 1.0 || currentSeconds >= 4.2) {
+        if (progress >= 1.0 || currentSeconds >= 3.2) {
           _ticker?.stop();
           _finish('controller_completed');
         }
       });
 
       if (widget.debugT != null) {
-        _controller.value = (widget.debugT! / 4.2).clamp(0.0, 1.0);
+        _controller.value = (widget.debugT! / 3.2).clamp(0.0, 1.0);
       }
     } catch (e, stack) {
       debugPrint('[LaunchTiming] EXCEPTION in initState: $e\n$stack');
@@ -296,7 +291,7 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
     super.didUpdateWidget(oldWidget);
     if (widget.debugT != null) {
       if (_ticker?.isTicking ?? false) _ticker?.stop();
-      _controller.value = (widget.debugT! / 4.2).clamp(0.0, 1.0);
+      _controller.value = (widget.debugT! / 3.2).clamp(0.0, 1.0);
       _watchdogTimer?.cancel();
     }
   }
@@ -310,7 +305,7 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
     final disableAnimations = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     if (widget.debugT != null) {
       if (_ticker?.isTicking ?? false) _ticker?.stop();
-      _controller.value = (widget.debugT! / 4.2).clamp(0.0, 1.0);
+      _controller.value = (widget.debugT! / 3.2).clamp(0.0, 1.0);
       _watchdogTimer?.cancel();
     } else if (disableAnimations && !_isReducedMotion) {
       _isReducedMotion = true;
@@ -378,7 +373,7 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
-          final t = widget.debugT ?? (_controller.value * 4.2);
+          final t = widget.debugT ?? (_controller.value * 3.2);
           final state = LaunchTimelineState.compute(t);
 
           return Opacity(
@@ -393,15 +388,14 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
                     alignment: Alignment.center,
                     clipBehavior: Clip.none,
                     children: [
-                      // 1. PDF Document Icon (Drops in center, folds, gets bitten and tilts)
-                      Opacity(
-                        opacity: state.paperOpacity.clamp(0.0, 1.0),
-                        child: Transform.translate(
-                          offset: Offset(state.iconXOffset, state.paperY),
-                          child: Transform.rotate(
-                            angle: state.iconRotate,
+                      // 1. PDF Document Icon in middle of screen (Drops, folds, gets eaten)
+                      if (state.pdfOpacity > 0.01)
+                        Transform.translate(
+                          offset: Offset(0, state.paperY),
+                          child: Opacity(
+                            opacity: (state.paperOpacity * state.pdfOpacity).clamp(0.0, 1.0),
                             child: Transform.scale(
-                              scale: state.iconScale,
+                              scale: state.pdfScale,
                               child: PaperDocumentWidget(
                                 fold: state.fold,
                                 textLinesOpacity: state.textLinesOpacity,
@@ -411,21 +405,51 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
                             ),
                           ),
                         ),
-                      ),
 
-                      // 2. Crocodile (Enters from left, mouth opens, lunges, clamps & exits right)
+                      // 2. Wordmark centered in middle of screen, revealed as croc moves right
+                      if (state.revealProgress > 0.01)
+                        ClipRect(
+                          clipper: _WordmarkRevealClipper(state.revealProgress * 260.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'KrocPDF',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Fast. Private. On-device.',
+                                style: TextStyle(
+                                  color: subtextColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // 3. Crocodile entering from left, eating the file, and moving rightward
                       Transform.translate(
                         offset: Offset(state.crocX, 0.0),
                         child: Transform.scale(
                           scale: state.crocScale,
-                          origin: const Offset(42.14, 81.48), // (60.2 * 140/200, 116.4 * 140/200)
+                          origin: const Offset(42.14, 81.48), // Hinge origin
                           child: SizedBox(
                             width: 140,
                             height: 140,
                             child: Stack(
                               clipBehavior: Clip.none,
                               children: [
-                                // Solid, unified Upper Head (cranium, crests, snout, upper teeth)
+                                // Solid Upper Head
                                 ClipPath(
                                   clipper: const _UpperHeadClipper(),
                                   child: Image.asset(
@@ -440,9 +464,9 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
                                   ),
                                 ),
 
-                                // Articulating Lower Jaw (mandible, lower teeth)
+                                // Articulating Lower Jaw
                                 Transform.rotate(
-                                  angle: 18.0 * (math.pi / 180.0) * state.mouthA,
+                                  angle: 22.0 * (math.pi / 180.0) * state.mouthA,
                                   origin: const Offset(42.14, 81.48),
                                   child: ClipPath(
                                     clipper: const _LowerJawClipper(),
@@ -461,36 +485,6 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
                               ],
                             ),
                           ),
-                        ),
-                      ),
-
-                      // 3. Wordmark revealed from left-to-right behind exiting crocodile
-                      ClipRect(
-                        clipper: _WordmarkRevealClipper(state.revealProgress * 260.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              'KrocPDF',
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              'Fast. Private. On-device.',
-                              style: TextStyle(
-                                color: subtextColor,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.2,
-                              ),
-                            ),
-                          ],
                         ),
                       ),
                     ],
@@ -599,9 +593,8 @@ class _LowerJawClipper extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+  bool shouldReclip(covariant _LowerJawClipper oldClipper) => false;
 }
-
 
 /// Reveals the wordmark from left to right as the crocodile exits to the right.
 class _WordmarkRevealClipper extends CustomClipper<Rect> {
