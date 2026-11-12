@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Branded launch animation sequence (`LaunchAnimationScreen` and `LaunchGate`) featuring paper drop, conversion to PDF document, crocodile bite interaction, carrier motion, and trail reveal into the KrocPDF wordmark.
+- Wall-clock monotonic `Stopwatch` + `Ticker` timing engine ensuring a consistent 4.2-second launch pacing across all display refresh rates (60Hz, 90Hz, 120Hz).
+- Adaptive monochrome dark-mode document styling ensuring high-contrast teeth and jaw silhouette visibility across both light and dark themes.
+- On-device PDF compression engine (`PdfCompressionService`) with quality presets and custom slider.
 - Dependabot configuration (`.github/dependabot.yml`) for weekly `pub`, `github-actions`, and `gradle` dependency updates.
 - Cross-platform pre-commit Git hook (`.githooks/pre-commit`) enforcing `dart format` and `flutter analyze` locally.
 - `README.md` CI/toolchain status badges, optimized launch demo GIF (`docs/assets/demo_launch.gif`), and Visual Tour.

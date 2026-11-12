@@ -10,14 +10,15 @@
 | D-006 | Abstract Processing Service Contract | Accepted | 2026-10-28 |
 | D-007 | Platform Baselines: Android SDK 24 and iOS 13 with Zero Production Permissions | Accepted | 2026-10-28 |
 | D-008 | State Management and Routing Choice: Riverpod and go_router | Accepted | 2026-10-28 |
-| D-009 | Strict Local-Only Git Workflow (No-Push Policy) | Accepted | 2026-10-28 |
+| D-009 | Strict Local-Only Git Workflow (No-Push Policy) | Outdated | 2026-10-28 |
 | D-010 | Pinned Flutter SDK and Dart Toolchain Baseline | Accepted | 2026-10-28 |
 | D-011 | Format Parameter Passing via Route Query Parameters | Accepted | 2026-10-28 |
 | D-012 | Web Platform Target for Local Browser Preview in Brave | Accepted | 2026-10-28 |
 | D-013 | Native Splash Screen via Build-Time Dev Dependency | Accepted | 2026-10-28 |
-| D-014 | Splash Screen Hold Duration for Visual Verification & Animation Preparation | Accepted | 2026-10-28 |
+| D-014 | Splash Screen Hold Duration for Visual Verification & Animation Preparation | Superseded by D-017 | 2026-10-28 |
 | D-015 | Persistent Multi-Branch Navigation via StatefulShellRoute.indexedStack | Accepted | 2026-10-29 |
 | D-016 | Scan-to-PDF Pipeline and Shared Multi-Page Editing Toolbar | Accepted | 2026-10-29 |
+| D-017 | Native Flutter Branded Launch Animation and Cold-Start Gate | Accepted | 2026-11-04 |
 
 ---
 
@@ -95,12 +96,12 @@
 
 ## D-009: Strict Local-Only Git Workflow (No-Push Policy)
 - Date: 2026-10-28
+- Status: Outdated / Superseded — Remote repository `https://github.com/KrocPDF/App` was configured per user instruction on 2026-11-03. Current development remains local on the active branch without pushing until explicitly instructed.
 - Change: Verified local git repository with all remote tracking URLs removed (`git remote -v` outputs empty). Established atomic local commits after each verified step.
 - Why: Guarantees zero unintentional data or code leaks to external servers during development.
 - Alternatives considered: Maintaining a disabled remote. Rejected in favor of an empty remote list to make accidental pushes physically impossible.
-- Impact: All commits are strictly local until explicit user instruction.
-- Future impact: Remote will only be configured when the developer explicitly requests publishing.
-- Status: Accepted
+- Impact: Commits are strictly local on the current branch until explicit user instruction.
+- Future impact: Pushes require explicit user approval.
 
 ## D-010: Pinned Flutter SDK and Dart Toolchain Baseline
 - Date: 2026-10-28
@@ -140,11 +141,11 @@
 
 ## D-014: Splash Screen Hold Duration for Visual Verification & Animation Preparation
 - Date: 2026-10-28
+- Status: Superseded by D-017
 - Change: Added a 2-second initialization delay in `lib/main.dart` before `runApp()` and integrated a DOM `MutationObserver` with fade-out in `web/index.html` to remove the HTML splash screen once `<flutter-view>` is mounted.
 - Why: On fast developer workstations with local caching, Flutter engine boots in milliseconds, which causes the native/HTML splash screen to disappear before it can be visually verified. Holding for 2 seconds ensures the branding is clearly visible and establishes the timing window for upcoming custom splash animations.
 - Alternatives considered: Instant transition with zero delay. Rejected per developer request to observe and animate the splash screen.
-- Impact: Splash screen is visible for 2 seconds across both web preview and mobile platforms, followed by a smooth fade-out into the app.
-- Status: Accepted
+- Impact: Superseded by D-017 which replaced the static delay with an active branded Flutter animation sequence.
 
 ## D-015: Persistent Multi-Branch Navigation via StatefulShellRoute.indexedStack
 - Date: 2026-10-29
@@ -165,4 +166,18 @@
   - Android: Google Play Services ML Kit Document Scanner executes inference strictly on-device. If the ML Kit Document Scanner native module is not already present on the device, Google Play Services may trigger a one-time dynamic component download on first invocation. Subsequent scans and all image processing execute completely offline. Document images, scanned pages, and user metadata are never transmitted over the network.
   - Non-GMS Android Fallback: On Android devices without Google Play Services (e.g. de-googled ROMs, Huawei devices), the scanner initialization fails gracefully via `PlatformException` and displays a clear message directing the user to import pictures via the "Image to PDF" tool.
   - iOS: Uses Apple's VisionKit (`VNDocumentCameraViewController`), which is built directly into iOS 13+ system binaries. Requires zero network downloads, zero dynamic modules, and makes zero network calls.
+- Status: Accepted
+
+## D-017: Native Flutter Branded Launch Animation and Cold-Start Gate
+- Date: 2026-11-04
+- Change: Replaced D-014's artificial 2-second `Future.delayed` in `lib/main.dart` with a native Flutter launch animation sequence (`lib/features/launch/`) hosted inside a `LaunchGate` in `lib/app.dart`.
+- Why:
+  1. Branded storytelling on cold starts: Paper drops in from top, morphs/folds into a PDF icon, the KrocPDF crocodile mark enters from the left and lunges/eats the PDF document, settling in the center while the "KrocPDF - Fast. Private. On-device." wordmark reveals and holds cleanly for 0.6s before cross-fading to Home. Total duration is 4.2s.
+  2. In-memory cold-start flag: Tracks `LaunchGate.hasCompletedLaunch` in memory so the animation plays exclusively on true cold start (process creation), and is completely bypassed on warm resumes, app switching, and in-app navigation. An in-memory flag guarantees that fresh installs and reinstalls always play the animation.
+  3. Router decoupling: Hosted in `MaterialApp.router`'s `builder` property via `LaunchGate`, keeping GoRouter state, `StatefulShellRoute` branches, bottom navigation, and deep links completely intact.
+  4. Robust accessibility and safety nets:
+     - Respects `MediaQuery.disableAnimationsOf(context)` exclusively: bypasses motion and displays a brief static logo/wordmark before transitioning to Home.
+     - 6000 ms watchdog timer guarantees fallback to Home if the animation is interrupted.
+     - Asset decoding errors trigger immediate graceful fallback to Home without blocking app startup.
+     - Tap anywhere immediately skips the sequence.
 - Status: Accepted

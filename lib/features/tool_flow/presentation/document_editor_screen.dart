@@ -168,8 +168,9 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Cropping unavailable: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Cropping unavailable: $e')));
       }
     }
   }
@@ -483,8 +484,9 @@ class _DocumentEditorScreenState extends ConsumerState<DocumentEditorScreen> {
     } catch (e) {
       if (mounted) {
         ref.read(documentEditorProvider.notifier).setProcessing(false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to compile PDF: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to compile PDF: $e')));
       }
     }
   }

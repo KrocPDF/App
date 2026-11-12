@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -273,6 +274,48 @@ void main() {
       ]);
       expect(invalidExe is Failure, isTrue);
       expect((invalidExe as Failure).error, isA<UnsupportedType>());
+    },
+  );
+
+  testWidgets(
+    'Compress PDF Options displays presets, slider, and Compress PDF button',
+    (tester) async {
+      final tempDir = Directory.systemTemp.createTempSync(
+        'compress_flow_test_',
+      );
+      final tempPdf = File('${tempDir.path}/sample.pdf');
+      tempPdf.writeAsBytesSync([1, 2, 3, 4, 5]);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: ToolFlowScreen(
+              toolId: 'compress_pdf',
+              initialFilePath: tempPdf.path,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify presets are displayed
+      expect(find.text('Recommended'), findsOneWidget);
+      expect(find.text('Extreme'), findsOneWidget);
+      expect(find.text('Basic'), findsOneWidget);
+
+      // Verify slider is present
+      expect(find.byType(Slider), findsOneWidget);
+
+      // Verify button says "Compress PDF"
+      expect(
+        find.widgetWithText(ElevatedButton, 'Compress PDF'),
+        findsOneWidget,
+      );
+
+      // Verify on-device notice
+      expect(find.textContaining('100% confidential'), findsOneWidget);
+
+      tempDir.deleteSync(recursive: true);
     },
   );
 }

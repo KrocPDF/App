@@ -34,8 +34,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     final file = File(widget.filePath);
     if (!await file.exists()) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('File not found.')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('File not found.')));
       }
       return;
     }
@@ -47,8 +48,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     final file = File(widget.filePath);
     if (!await file.exists()) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('File not found.')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('File not found.')));
       }
       return;
     }
@@ -57,8 +59,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       await Printing.layoutPdf(onLayout: (_) => bytes, name: widget.title);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Print failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Print failed: $e')));
       }
     }
   }
