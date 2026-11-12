@@ -22,12 +22,15 @@ class PaperDocumentWidget extends StatelessWidget {
     const width = 62.0;
     const height = 80.0;
 
-    // Both light and dark theme use a crisp white sheet of paper
-    // matching the official logo/reference design
-    const paperBg = Color(0xFFFFFFFF);
-    const borderColor = Color(0xFF1E1E1E);
-    final lineColor = isDark ? const Color(0xFF444444) : const Color(0xFF222222);
-    const foldFlapColor = Color(0xFFEBEBEB);
+    // In light mode: crisp white sheet with dark border & black badge.
+    // In dark mode: sleek dark card (0xFF1C1C1E) with white border & white badge,
+    // ensuring maximum contrast and razor-sharp teeth definition with the white crocodile.
+    final paperBg = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFFFFFFF);
+    final borderColor = isDark ? const Color(0xFFFFFFFF) : const Color(0xFF1E1E1E);
+    final lineColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF222222);
+    final foldFlapColor = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFEBEBEB);
+    final badgeBg = isDark ? const Color(0xFFFFFFFF) : const Color(0xFF000000);
+    final badgeTextColor = isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
 
     return SizedBox(
       width: width,
@@ -80,21 +83,21 @@ class PaperDocumentWidget extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              // 2. Solid black badge with bold white "PDF" text on bottom
+              // 2. High-contrast badge with bold "PDF" text on bottom
               Opacity(
                 opacity: pdfBadgeOpacity.clamp(0.0, 1.0),
                 child: Container(
                   width: 44,
                   height: 25,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF000000),
+                    color: badgeBg,
                     borderRadius: BorderRadius.circular(4.5),
                   ),
                   alignment: Alignment.center,
-                  child: const Text(
+                  child: Text(
                     'PDF',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: badgeTextColor,
                       fontWeight: FontWeight.w900,
                       fontSize: 12.0,
                       letterSpacing: 0.5,

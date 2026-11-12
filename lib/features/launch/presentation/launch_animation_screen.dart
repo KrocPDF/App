@@ -113,24 +113,24 @@ class LaunchTimelineState {
     final double textLinesOpacity = _clamp01((clampedT - 1.30) / 0.35) * 0.9;
     final double pdfBadgeOpacity = _clamp01((clampedT - 1.45) / 0.35);
 
-    // 3. Crocodile enters from off-screen left (-320px) to mouth framing paper (-35px) (2.0 - 2.7s)
+    // 3. Crocodile enters from off-screen left (-320px) to mouth framing paper (-18px) (2.0 - 2.7s)
     final double crocX;
     if (clampedT < 2.0) {
       crocX = -320.0;
     } else if (clampedT <= 2.7) {
       final pEnter = _clamp01((clampedT - 2.0) / 0.7);
-      crocX = _lerp(-320.0, -35.0, easeOutCubicCurve.transform(pEnter));
+      crocX = _lerp(-320.0, -18.0, easeOutCubicCurve.transform(pEnter));
     } else if (clampedT <= 2.85) {
       // Forward lunge on bite crunch
       final pLunge = _clamp01((clampedT - 2.7) / 0.15);
-      crocX = _lerp(-35.0, -22.0, pLunge);
+      crocX = _lerp(-18.0, -8.0, pLunge);
     } else if (clampedT <= 3.15) {
       // Chewing settle before exit
-      crocX = -22.0;
+      crocX = -8.0;
     } else if (clampedT <= 3.85) {
       // Moves rightward off-screen
       final pExit = _clamp01((clampedT - 3.15) / 0.7);
-      crocX = _lerp(-22.0, 420.0, easeInOutQuadCurve.transform(pExit));
+      crocX = _lerp(-8.0, 420.0, easeInOutQuadCurve.transform(pExit));
     } else {
       crocX = 420.0;
     }
@@ -181,7 +181,7 @@ class LaunchTimelineState {
     } else if (clampedT <= 3.85) {
       // Croc bites and carries the PDF with it!
       final pClamp = _clamp01((clampedT - 2.7) / 0.15);
-      paperX = _lerp(0.0, crocX + 35.0, pClamp);
+      paperX = _lerp(0.0, crocX + 18.0, pClamp);
       actualPaperY = _lerp(paperY, -4.0, pClamp);
       // Bitten / squashed slightly by the jaws as it's carried:
       pdfScaleX = _lerp(1.0, 0.88, pClamp);
@@ -189,7 +189,7 @@ class LaunchTimelineState {
       pdfOpacity = 1.0;
     } else {
       // Carried completely off-screen
-      paperX = crocX + 35.0;
+      paperX = crocX + 18.0;
       actualPaperY = -4.0;
       pdfScaleX = 0.0;
       pdfScaleY = 0.0;

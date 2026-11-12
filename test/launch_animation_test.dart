@@ -36,7 +36,7 @@ void main() {
       final s = LaunchTimelineState.compute(2.65);
       expect(s.paperY, equals(0.0));
       expect(s.fold, equals(18.0));
-      expect(s.crocX, closeTo(-35.0, 1.0));
+      expect(s.crocX, closeTo(-18.0, 1.0));
       expect(s.mouthA, closeTo(1.0, 0.05));
       expect(s.pdfScale, equals(1.0));
       expect(s.pdfOpacity, equals(1.0));
