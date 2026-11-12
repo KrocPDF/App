@@ -14,6 +14,7 @@ import '../../features/files/data/files_repository.dart';
 import '../../features/tool_flow/domain/scanned_document.dart';
 import '../image_conversion_service.dart';
 import '../pdf_compression_service.dart';
+import '../pdf_merge_service.dart';
 import 'processing_service.dart';
 
 class LocalProcessingService implements ProcessingService {
@@ -90,6 +91,33 @@ class LocalProcessingService implements ProcessingService {
         );
       } catch (e) {
         return Failure(ProcessingFailed(reason: 'Failed to compress PDF: $e'));
+      }
+    }
+
+    if (request.toolId == 'merge_pdf') {
+      try {
+        if (request.filePaths.length != 2) {
+          return const Failure(
+            ProcessingFailed(
+              reason: 'Merge PDF requires strictly 2 PDF files.',
+            ),
+          );
+        }
+        const merger = PdfMergeService();
+        final result = await merger.mergePdfs(
+          inputPaths: request.filePaths,
+          passwords: request.passwords,
+          outputFileName: request.outputFileName,
+        );
+        return Success(
+          ProcessingResult(
+            outputFilePath: result.outputPath,
+            message:
+                'Merged ${result.totalPageCount} pages into ${result.fileName}.',
+          ),
+        );
+      } catch (e) {
+        return Failure(ProcessingFailed(reason: 'Failed to merge PDFs: $e'));
       }
     }
 

@@ -5,11 +5,15 @@ class ProcessingRequest {
   final String toolId;
   final String? format;
   final List<String> filePaths;
+  final Map<String, String> passwords;
+  final String? outputFileName;
 
   const ProcessingRequest({
     required this.toolId,
     this.format,
     this.filePaths = const [],
+    this.passwords = const {},
+    this.outputFileName,
   });
 }
 

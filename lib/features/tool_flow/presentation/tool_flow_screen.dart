@@ -14,9 +14,11 @@ import '../../../core/utils/storage_permission_helper.dart';
 import '../../../services/file_validation_service.dart';
 import '../../../services/image_conversion_service.dart';
 import '../../../services/pdf_compression_service.dart';
+import '../../../services/pdf_merge_service.dart';
 import '../../files/data/files_repository.dart';
 import '../../files/domain/saved_document.dart';
 import '../../home/domain/tool_item.dart';
+import 'widgets/pdf_password_dialog.dart';
 
 class ToolFlowScreen extends ConsumerStatefulWidget {
   final String toolId;
@@ -73,8 +75,26 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
   bool _isCompressedSavedToFiles = false;
   bool _isSavingCompressedPdf = false;
 
+  // Merge PDF state
+  final PdfMergeService _mergeService = const PdfMergeService();
+  final TextEditingController _mergeOutputNameController =
+      TextEditingController(text: 'merged_document');
+  bool _isMerging = false;
+  String _mergeStage = '';
+  double? _mergeProgress;
+  String? _mergeError;
+  MergedPdfResult? _mergeResult;
+  bool _isMergedSavedToFiles = false;
+  bool _isSavingMergedPdf = false;
+
   // Multi-tool files state
   final List<File> _selectedFiles = [];
+
+  @override
+  void dispose() {
+    _mergeOutputNameController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -115,6 +135,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
 
   bool get _isImageConvert => widget.toolId == 'image_convert';
   bool get _isCompressPdf => widget.toolId == 'compress_pdf';
+  bool get _isMergePdf => widget.toolId == 'merge_pdf';
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -293,12 +314,37 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       }
 
       if (validFiles.isNotEmpty && mounted) {
-        setState(() {
-          if (!allowMultiple) {
-            _selectedFiles.clear();
+        if (_isMergePdf) {
+          final remainingSlots = 2 - _selectedFiles.length;
+          if (remainingSlots <= 0) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Merge PDF accepts 2 PDFs at a time. Remove one first.',
+                ),
+              ),
+            );
+            return;
           }
-          _selectedFiles.addAll(validFiles);
-        });
+          final toAdd = validFiles.take(remainingSlots).toList();
+          if (validFiles.length > remainingSlots) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Merge PDF accepts 2 PDFs; extra files ignored.'),
+              ),
+            );
+          }
+          setState(() {
+            _selectedFiles.addAll(toAdd);
+          });
+        } else {
+          setState(() {
+            if (!allowMultiple) {
+              _selectedFiles.clear();
+            }
+            _selectedFiles.addAll(validFiles);
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -523,6 +569,12 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                               onChanged: (val) {
                                 setModalState(() {
                                   if (val == true) {
+                                    if (_isMergePdf &&
+                                        _selectedFiles.length +
+                                                selectedDocIds.length >=
+                                            2) {
+                                      return;
+                                    }
                                     selectedDocIds.add(doc.id);
                                   } else {
                                     selectedDocIds.remove(doc.id);
@@ -808,8 +860,200 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       _compressResult = null;
       _isCompressedSavedToFiles = false;
 
+      _mergeOutputNameController.text = 'merged_document';
+      _isMerging = false;
+      _mergeStage = '';
+      _mergeProgress = null;
+      _mergeError = null;
+      _mergeResult = null;
+      _isMergedSavedToFiles = false;
+
       _selectedFiles.clear();
     });
+  }
+
+  Future<void> _startMerge() async {
+    if (_selectedFiles.length != 2) return;
+    final paths = _selectedFiles.map((f) => f.path).toList();
+
+    for (final file in _selectedFiles) {
+      if (!file.existsSync()) {
+        setState(() {
+          _currentStepIndex = 2;
+          _isMerging = false;
+          _mergeError = 'Selected PDF file no longer exists on disk.';
+        });
+        return;
+      }
+    }
+
+    setState(() {
+      _currentStepIndex = 2;
+      _isMerging = true;
+      _mergeError = null;
+      _mergeResult = null;
+      _mergeStage = 'Checking PDF files...';
+      _mergeProgress = 0.1;
+      _isMergedSavedToFiles = false;
+    });
+
+    try {
+      final inspection = await _mergeService.inspectFiles(paths);
+      if (!mounted) return;
+
+      if (inspection.hasInvalidFiles) {
+        setState(() {
+          _mergeError = inspection.invalidFiles.values.first;
+          _isMerging = false;
+        });
+        return;
+      }
+
+      var passwords = <String, String>{};
+      if (inspection.hasEncryptedFiles) {
+        final entered = await showPdfPasswordDialog(
+          context: context,
+          encryptedFilePaths: inspection.encryptedFilePaths,
+        );
+        if (!mounted) return;
+        if (entered == null) {
+          setState(() {
+            _isMerging = false;
+            _currentStepIndex = 1;
+          });
+          return;
+        }
+        passwords = entered;
+      }
+
+      while (true) {
+        try {
+          final result = await _mergeService.mergePdfs(
+            inputPaths: paths,
+            passwords: passwords,
+            outputFileName: _mergeOutputNameController.text,
+            onProgress: (status, progress) {
+              if (mounted) {
+                setState(() {
+                  _mergeStage = status;
+                  _mergeProgress = progress;
+                });
+              }
+            },
+          );
+          if (!mounted) return;
+          setState(() {
+            _mergeResult = result;
+            _isMerging = false;
+            _currentStepIndex = 3;
+          });
+          return;
+        } on PdfInvalidPasswordException catch (e) {
+          if (!mounted) return;
+          final retried = await showPdfPasswordDialog(
+            context: context,
+            encryptedFilePaths: e.failedFilePaths,
+            initialPasswords: passwords,
+            fileErrors: {
+              for (final p in e.failedFilePaths) p: 'Incorrect password',
+            },
+          );
+          if (!mounted) return;
+          if (retried == null) {
+            setState(() {
+              _isMerging = false;
+              _currentStepIndex = 1;
+            });
+            return;
+          }
+          passwords = {...passwords, ...retried};
+        } on PdfPasswordRequiredException catch (e) {
+          if (!mounted) return;
+          final entered = await showPdfPasswordDialog(
+            context: context,
+            encryptedFilePaths: e.encryptedFilePaths,
+            initialPasswords: passwords,
+          );
+          if (!mounted) return;
+          if (entered == null) {
+            setState(() {
+              _isMerging = false;
+              _currentStepIndex = 1;
+            });
+            return;
+          }
+          passwords = {...passwords, ...entered};
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _mergeError = e.toString();
+          _isMerging = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleShareMergedPdf() async {
+    if (_mergeResult == null) return;
+    final file = File(_mergeResult!.outputPath);
+    if (!await file.exists()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Merged PDF file not found on disk.')),
+        );
+      }
+      return;
+    }
+    // ignore: deprecated_member_use
+    await Share.shareXFiles([XFile(_mergeResult!.outputPath)]);
+  }
+
+  Future<void> _handleDownloadMergedPdf() async {
+    if (_mergeResult == null || _isMergedSavedToFiles || _isSavingMergedPdf) {
+      return;
+    }
+    _isSavingMergedPdf = true;
+    try {
+      final file = File(_mergeResult!.outputPath);
+      if (!await file.exists()) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Merged PDF file not found on disk.')),
+          );
+        }
+        return;
+      }
+
+      await ref
+          .read(savedFilesProvider.notifier)
+          .addExternalFile(
+            file,
+            customTitle: _mergeResult!.fileName,
+            sourceType: SavedDocumentSource.merge,
+          );
+
+      if (mounted) {
+        setState(() {
+          _isMergedSavedToFiles = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Saved "${_mergeResult!.fileName}" to Files.'),
+            backgroundColor: Colors.green.shade700,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save file: $e')));
+      }
+    } finally {
+      _isSavingMergedPdf = false;
+    }
   }
 
   @override
@@ -838,8 +1082,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       canGoNext = false;
     } else if (widget.toolId == 'merge_pdf') {
       canGoNext =
-          (_currentStepIndex == 0 && _selectedFiles.length >= 2) ||
-          (_currentStepIndex > 0);
+          (_currentStepIndex == 0 && _selectedFiles.length == 2) ||
+          (_currentStepIndex == 1);
     } else {
       canGoNext =
           (_currentStepIndex == 0 && _selectedFiles.isNotEmpty) ||
@@ -896,6 +1140,18 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                                 _selectedFiles.isNotEmpty) {
                               _startCompression();
                             } else if (index == 3 && _compressResult != null) {
+                              setState(() => _currentStepIndex = index);
+                            }
+                          } else if (_isMergePdf) {
+                            if (index == 0) {
+                              setState(() => _currentStepIndex = index);
+                            } else if (index == 1 &&
+                                _selectedFiles.length == 2) {
+                              setState(() => _currentStepIndex = index);
+                            } else if (index == 2 &&
+                                _selectedFiles.length == 2) {
+                              _startMerge();
+                            } else if (index == 3 && _mergeResult != null) {
                               setState(() => _currentStepIndex = index);
                             }
                           } else {
@@ -961,7 +1217,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                   children: [
                     if (_currentStepIndex > 0 &&
                         !_isConverting &&
-                        !_isCompressing)
+                        !_isCompressing &&
+                        !_isMerging)
                       OutlinedButton(
                         onPressed: () => setState(() => _currentStepIndex--),
                         child: const Text('Back'),
@@ -977,6 +1234,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                                 } else if (_isCompressPdf &&
                                     _currentStepIndex == 1) {
                                   _startCompression();
+                                } else if (_isMergePdf &&
+                                    _currentStepIndex == 1) {
+                                  _startMerge();
                                 } else {
                                   setState(() => _currentStepIndex++);
                                 }
@@ -987,6 +1247,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                               ? 'Convert to $_targetFormat'
                               : _isCompressPdf && _currentStepIndex == 1
                               ? 'Compress PDF'
+                              : _isMergePdf && _currentStepIndex == 1
+                              ? 'Merge PDF'
                               : 'Next step',
                         ),
                       )
@@ -996,6 +1258,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                         child: Text(
                           _isCompressPdf
                               ? 'Compress another'
+                              : _isMergePdf
+                              ? 'Merge another'
                               : 'Convert another',
                         ),
                       ),
@@ -1039,6 +1303,21 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
           return _buildCompressPdfProgressStep(context, borderColor, isDark);
         case 3:
           return _buildCompressPdfResultStep(context, borderColor, isDark);
+        default:
+          return const SizedBox.shrink();
+      }
+    }
+
+    if (_isMergePdf) {
+      switch (_currentStepIndex) {
+        case 0:
+          return _buildSelectFilesStep(context, borderColor, isDark);
+        case 1:
+          return _buildMergePdfOptionsStep(context, borderColor, isDark);
+        case 2:
+          return _buildMergePdfProgressStep(context, borderColor, isDark);
+        case 3:
+          return _buildMergePdfResultStep(context, borderColor, isDark);
         default:
           return const SizedBox.shrink();
       }
@@ -1831,7 +2110,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${_selectedFiles.length} ${_selectedFiles.length == 1 ? 'file' : 'files'} selected',
+                '${_selectedFiles.length} of 2 PDFs selected',
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -1839,12 +2118,24 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
               ),
               if (_selectedFiles.length < 2)
                 const Text(
-                  'Select at least 2 PDFs',
+                  'Select 2 PDFs',
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.orange,
                     fontWeight: FontWeight.w600,
                   ),
+                )
+              else
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      final first = _selectedFiles[0];
+                      _selectedFiles[0] = _selectedFiles[1];
+                      _selectedFiles[1] = first;
+                    });
+                  },
+                  icon: const Icon(Icons.swap_vert, size: 16),
+                  label: const Text('Swap Order'),
                 ),
             ],
           ),
@@ -1925,25 +2216,27 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
             },
           ),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              OutlinedButton.icon(
-                onPressed: () => _pickFilesFromDevice(
-                  allowedExtensions: ['pdf'],
-                  allowMultiple: true,
+          if (_selectedFiles.length < 2)
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => _pickFilesFromDevice(
+                    allowedExtensions: ['pdf'],
+                    allowMultiple: true,
+                  ),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Add from Device'),
                 ),
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add from Device'),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => _showSavedDocumentsPicker(allowMultiple: true),
-                icon: const Icon(Icons.bookmark_border_outlined, size: 16),
-                label: const Text('Add from Saved Documents'),
-              ),
-            ],
-          ),
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      _showSavedDocumentsPicker(allowMultiple: true),
+                  icon: const Icon(Icons.bookmark_border_outlined, size: 16),
+                  label: const Text('Add from Saved Documents'),
+                ),
+              ],
+            ),
         ],
       );
     }
@@ -2830,6 +3123,305 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
               onPressed: _resetFlow,
               icon: const Icon(Icons.refresh_outlined, size: 18),
               label: const Text('Compress Another'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // --- Merge PDF Specific Steps ---
+
+  Widget _buildMergePdfOptionsStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Merge Order',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Pages from PDF 1 will be followed by pages from PDF 2. If either PDF is password-protected, you will be prompted to unlock it.',
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.white60 : Colors.black54,
+          ),
+        ),
+        const SizedBox(height: 16),
+        for (int i = 0; i < _selectedFiles.length; i++) ...[
+          if (i > 0) const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF141414) : const Color(0xFFFAFAFA),
+              border: Border.all(color: borderColor, width: 0.8),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                  child: Text(
+                    '${i + 1}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Icon(
+                  Icons.picture_as_pdf_outlined,
+                  size: 18,
+                  color: Color(0xFFFF9500),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _selectedFiles[i].uri.pathSegments.last,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        if (_selectedFiles.length == 2) ...[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  final first = _selectedFiles[0];
+                  _selectedFiles[0] = _selectedFiles[1];
+                  _selectedFiles[1] = first;
+                });
+              },
+              icon: const Icon(Icons.swap_vert, size: 16),
+              label: const Text('Swap Order'),
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        const Text(
+          'Output File Name',
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _mergeOutputNameController,
+          decoration: const InputDecoration(
+            hintText: 'merged_document',
+            suffixText: '.pdf',
+            border: OutlineInputBorder(),
+            isDense: true,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMergePdfProgressStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
+    if (_mergeError != null) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+          const SizedBox(height: 14),
+          const Text(
+            'Merge Failed',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _mergeError!,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: () {
+              setState(() {
+                _mergeError = null;
+                _currentStepIndex = 1;
+              });
+            },
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Back to Options'),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 48,
+          height: 48,
+          child: CircularProgressIndicator(
+            strokeWidth: 3,
+            color: isDark ? Colors.white : Colors.black,
+          ),
+        ),
+        const SizedBox(height: 22),
+        Text(
+          _mergeStage.isNotEmpty ? _mergeStage : 'Merging PDFs...',
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          textAlign: TextAlign.center,
+        ),
+        if (_mergeProgress != null) ...[
+          const SizedBox(height: 14),
+          SizedBox(
+            width: 220,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: _mergeProgress,
+                minHeight: 4,
+                color: isDark ? Colors.white : Colors.black,
+                backgroundColor: isDark ? Colors.white12 : Colors.black12,
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        Text(
+          'Merging documents locally on your device.',
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.white60 : Colors.black54,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMergePdfResultStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
+    final res = _mergeResult;
+    if (res == null) {
+      return const Center(child: Text('No result available.'));
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: Colors.green.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.check, size: 30, color: Colors.green),
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          'PDFs Merged!',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '${res.totalPageCount} ${res.totalPageCount == 1 ? 'page' : 'pages'} • ${res.formattedSize}',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.white60 : Colors.black54,
+          ),
+        ),
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF141414) : const Color(0xFFFAFAFA),
+            border: Border.all(color: borderColor, width: 1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9500).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.picture_as_pdf_outlined,
+                  color: Color(0xFFFF9500),
+                  size: 30,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                res.fileName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          alignment: WrapAlignment.center,
+          children: [
+            OutlinedButton.icon(
+              onPressed: _handleShareMergedPdf,
+              icon: const Icon(Icons.share_outlined, size: 16),
+              label: const Text('Share'),
+            ),
+            ElevatedButton.icon(
+              onPressed: _isMergedSavedToFiles
+                  ? null
+                  : _handleDownloadMergedPdf,
+              icon: Icon(
+                _isMergedSavedToFiles ? Icons.check : Icons.save_alt_outlined,
+                size: 16,
+              ),
+              label: Text(
+                _isMergedSavedToFiles ? 'Saved to Files' : 'Save to Files',
+              ),
+            ),
+            OutlinedButton.icon(
+              onPressed: () {
+                final encodedPath = Uri.encodeComponent(res.outputPath);
+                final encodedTitle = Uri.encodeComponent(res.fileName);
+                context.push(
+                  '/pdf-viewer?path=$encodedPath&title=$encodedTitle',
+                );
+              },
+              icon: const Icon(Icons.visibility_outlined, size: 16),
+              label: const Text('View PDF'),
             ),
           ],
         ),
