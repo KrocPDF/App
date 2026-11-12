@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Dependabot configuration (`.github/dependabot.yml`) for weekly `pub`, `github-actions`, and `gradle` dependency updates.
+- Cross-platform pre-commit Git hook (`.githooks/pre-commit`) enforcing `dart format` and `flutter analyze` locally.
+- `README.md` CI/toolchain status badges, optimized launch demo GIF (`docs/assets/demo_launch.gif`), and Visual Tour.
 - Dual-engine GitHub Actions auto-labeler workflow (`.github/workflows/labeler.yml`) for PRs and Issues.
 - 34 custom taxonomy labels for KrocPDF scopes, platforms, processing modes, and semver (`.github/labels.json`).
 - Path-based label configuration (`.github/labeler.yml`) for automated component tagging.

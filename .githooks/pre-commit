@@ -1,0 +1,39 @@
+#!/usr/bin/env sh
+# KrocPDF Pre-Commit Hook
+# Enable locally with: git config core.hooksPath .githooks
+
+set -e
+
+STAGED_DART_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.dart' || true)
+
+if [ -z "$STAGED_DART_FILES" ]; then
+  exit 0
+fi
+
+echo "🔍 Running KrocPDF pre-commit checks on staged Dart files..."
+
+if ! command -v dart >/dev/null 2>&1; then
+  echo "⚠️  'dart' not found on PATH. Skipping local format check (CI will still enforce it)."
+else
+  echo "📐 Checking Dart formatting..."
+  if ! echo "$STAGED_DART_FILES" | xargs dart format --output=none --set-exit-if-changed; then
+    echo ""
+    echo "❌ Formatting check failed!"
+    echo "   Run 'dart format .' and re-stage your changes before committing."
+    echo "   (Use 'git commit --no-verify' only in emergencies.)"
+    exit 1
+  fi
+fi
+
+if ! command -v flutter >/dev/null 2>&1; then
+  echo "⚠️  'flutter' not found on PATH. Skipping local static analysis (CI will still enforce it)."
+else
+  echo "🔎 Running flutter analyze..."
+  if ! flutter analyze --fatal-infos --fatal-warnings; then
+    echo ""
+    echo "❌ Static analysis failed! Please resolve all issues before committing."
+    exit 1
+  fi
+fi
+
+echo "✅ Pre-commit checks passed."
