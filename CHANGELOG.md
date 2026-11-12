@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- On-device two-PDF merge engine (`PdfMergeService`) using `syncfusion_flutter_pdf` inside `Isolate.run()` with unified 1-or-2-file password prompt (`showPdfPasswordDialog`) and full `ToolFlowScreen` integration (#22).
 - Branded launch animation sequence (`LaunchAnimationScreen` and `LaunchGate`) featuring paper drop, conversion to PDF document, crocodile bite interaction, carrier motion, and trail reveal into the KrocPDF wordmark.
 - Wall-clock monotonic `Stopwatch` + `Ticker` timing engine ensuring a consistent 4.2-second launch pacing across all display refresh rates (60Hz, 90Hz, 120Hz).
 - Adaptive monochrome dark-mode document styling ensuring high-contrast teeth and jaw silhouette visibility across both light and dark themes.
