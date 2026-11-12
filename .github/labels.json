@@ -1,0 +1,44 @@
+[
+  { "name": "type: bug", "color": "d73a4a", "description": "Something isn't working as expected" },
+  { "name": "type: feature", "color": "a2eeef", "description": "New feature or tool capability" },
+  { "name": "type: enhancement", "color": "80e5ff", "description": "Improvement to an existing feature" },
+  { "name": "type: refactor", "color": "e4e669", "description": "Code restructuring without behavioral change" },
+  { "name": "type: performance", "color": "e11d48", "description": "Performance tuning or memory optimization" },
+  { "name": "type: documentation", "color": "0075ca", "description": "Improvements or additions to documentation" },
+  { "name": "type: test", "color": "0e8a16", "description": "Adding or updating unit, widget, or integration tests" },
+  { "name": "type: ci/cd", "color": "6f42c1", "description": "GitHub Actions workflows and build pipelines" },
+  { "name": "type: security", "color": "b60205", "description": "Security vulnerabilities and threat mitigations" },
+
+  { "name": "scope: pdf-tools", "color": "ff9900", "description": "PDF operations (compress, merge, split, view)" },
+  { "name": "scope: scanner", "color": "ffb347", "description": "ML Kit document scanner and camera pipeline" },
+  { "name": "scope: image-tools", "color": "f39c12", "description": "Image conversion and image cropping" },
+  { "name": "scope: file-manager", "color": "e67e22", "description": "Local file repository, storage, and persistence" },
+  { "name": "scope: ui/ux", "color": "5319e7", "description": "Monochrome design system, theme, and animations" },
+  { "name": "scope: navigation", "color": "9b59b6", "description": "GoRouter routing, routes, and shell navigation" },
+  { "name": "scope: core", "color": "34495e", "description": "AppLimits, Result monad, errors, and utility helpers" },
+  { "name": "scope: architecture", "color": "2c3e50", "description": "Architectural decisions (ADRs) and service contracts" },
+
+  { "name": "platform: android", "color": "3ddc84", "description": "Android-specific native configuration and Kotlin code" },
+  { "name": "platform: ios", "color": "000000", "description": "iOS-specific native configuration and Swift code" },
+  { "name": "platform: web", "color": "4285f4", "description": "Web-specific assets and browser preview" },
+
+  { "name": "mode: confidential", "color": "1f2937", "description": "100% on-device offline processing" },
+  { "name": "mode: cloud", "color": "3b82f6", "description": "Non-Confidential cloud-assisted processing" },
+
+  { "name": "size: xs", "color": "00ff7f", "description": "Diff size: 1 - 20 lines" },
+  { "name": "size: s", "color": "7cfc00", "description": "Diff size: 21 - 100 lines" },
+  { "name": "size: m", "color": "ffeb3b", "description": "Diff size: 101 - 300 lines" },
+  { "name": "size: l", "color": "ffa500", "description": "Diff size: 301 - 800 lines" },
+  { "name": "size: xl", "color": "ff4500", "description": "Diff size: 800+ lines" },
+
+  { "name": "status: needs-review", "color": "fbca04", "description": "Ready for team code review" },
+  { "name": "status: in-progress", "color": "fef2c0", "description": "Work currently being carried out" },
+  { "name": "status: blocked", "color": "b60205", "description": "Blocked by another issue or dependency" },
+
+  { "name": "semver: breaking", "color": "b60205", "description": "Major release trigger" },
+  { "name": "semver: minor", "color": "1d76db", "description": "Minor release trigger" },
+  { "name": "semver: patch", "color": "0e8a16", "description": "Patch release trigger" },
+
+  { "name": "skip-changelog", "color": "d4c5f9", "description": "Skip release notes requirement in PR checks" }
+]
+

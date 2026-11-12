@@ -45,6 +45,12 @@ dart --version
    flutter test
    ```
 
+4. **Enable Local Pre-Commit Hooks (Recommended):**
+   Automatically checks `dart format` and `flutter analyze` on staged Dart files before each commit:
+   ```bash
+   git config core.hooksPath .githooks
+   ```
+
 ---
 
 ## 4. Architectural Rules & Principles
