@@ -289,7 +289,10 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
 
     try {
       if (widget.debugT == null) {
-        _watchdogTimer = Timer(const Duration(milliseconds: 6000), () => _finish('watchdog'));
+        _watchdogTimer = Timer(
+          const Duration(milliseconds: 6000),
+          () => _finish('watchdog'),
+        );
       }
 
       _controller = AnimationController(
@@ -302,9 +305,15 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
 
         final double currentSeconds;
         if (_isTestEnvironment) {
-          currentSeconds = (elapsed.inMicroseconds / 1000000.0).clamp(0.0, _totalDuration);
+          currentSeconds = (elapsed.inMicroseconds / 1000000.0).clamp(
+            0.0,
+            _totalDuration,
+          );
         } else {
-          currentSeconds = (_stopwatch.elapsedMicroseconds / 1000000.0).clamp(0.0, _totalDuration);
+          currentSeconds = (_stopwatch.elapsedMicroseconds / 1000000.0).clamp(
+            0.0,
+            _totalDuration,
+          );
         }
 
         final progress = (currentSeconds / _totalDuration).clamp(0.0, 1.0);
@@ -340,7 +349,8 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     precacheImage(AssetImage(_LaunchColors.logoAsset(isDark)), context);
 
-    final disableAnimations = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final disableAnimations =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     if (widget.debugT != null) {
       if (_ticker?.isTicking ?? false) _ticker?.stop();
       _controller.value = (widget.debugT! / _totalDuration).clamp(0.0, 1.0);
@@ -349,7 +359,10 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
       _isReducedMotion = true;
       if (_ticker?.isTicking ?? false) _ticker?.stop();
       _reducedMotionTimer?.cancel();
-      _reducedMotionTimer = Timer(const Duration(milliseconds: 800), () => _finish('reduced_motion'));
+      _reducedMotionTimer = Timer(
+        const Duration(milliseconds: 800),
+        () => _finish('reduced_motion'),
+      );
     } else if (!_isReducedMotion && !_hasStarted && widget.debugT == null) {
       _hasStarted = true;
       _stopwatch.start();
@@ -396,9 +409,7 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
         type: MaterialType.transparency,
         child: Container(
           color: bgColor,
-          child: Center(
-            child: _ReducedMotionLogo(isDark: isDark),
-          ),
+          child: Center(child: _ReducedMotionLogo(isDark: isDark)),
         ),
       );
     }
@@ -428,7 +439,8 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
                         Transform.translate(
                           offset: Offset(state.paperX, state.paperY),
                           child: Opacity(
-                            opacity: (state.paperOpacity * state.pdfOpacity).clamp(0.0, 1.0),
+                            opacity: (state.paperOpacity * state.pdfOpacity)
+                                .clamp(0.0, 1.0),
                             child: Transform.scale(
                               scaleX: state.pdfScaleX,
                               scaleY: state.pdfScaleY,
@@ -450,7 +462,9 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
                           child: Opacity(
                             opacity: state.wordmarkOpacity.clamp(0.0, 1.0),
                             child: ClipRect(
-                              clipper: _WordmarkRevealClipper(state.revealProgress * 260.0),
+                              clipper: _WordmarkRevealClipper(
+                                state.revealProgress * 260.0,
+                              ),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -501,7 +515,10 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
                                     height: 160,
                                     fit: BoxFit.contain,
                                     errorBuilder: (context, error, stackTrace) {
-                                      WidgetsBinding.instance.addPostFrameCallback((_) => _finish('upper_asset_error'));
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback(
+                                            (_) => _finish('upper_asset_error'),
+                                          );
                                       return const SizedBox.shrink();
                                     },
                                   ),
@@ -509,7 +526,8 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
 
                                 // Articulating Lower Jaw (Articulates around true mouth cleft hinge)
                                 Transform.rotate(
-                                  angle: 14.0 * (math.pi / 180.0) * state.mouthA,
+                                  angle:
+                                      14.0 * (math.pi / 180.0) * state.mouthA,
                                   alignment: Alignment.topLeft,
                                   origin: const Offset(
                                     160.0 * 190.0 / 512.0,
@@ -522,10 +540,16 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
                                       width: 160,
                                       height: 160,
                                       fit: BoxFit.contain,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        WidgetsBinding.instance.addPostFrameCallback((_) => _finish('lower_asset_error'));
-                                        return const SizedBox.shrink();
-                                      },
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            WidgetsBinding.instance
+                                                .addPostFrameCallback(
+                                                  (_) => _finish(
+                                                    'lower_asset_error',
+                                                  ),
+                                                );
+                                            return const SizedBox.shrink();
+                                          },
                                     ),
                                   ),
                                 ),

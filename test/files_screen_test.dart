@@ -133,7 +133,10 @@ void main() {
 
       // Options step should be displayed directly
       expect(find.text('Options'), findsWidgets);
-      expect(find.widgetWithText(ElevatedButton, 'Compress PDF'), findsOneWidget);
+      expect(
+        find.widgetWithText(ElevatedButton, 'Compress PDF'),
+        findsOneWidget,
+      );
 
       tempDir.deleteSync(recursive: true);
     },

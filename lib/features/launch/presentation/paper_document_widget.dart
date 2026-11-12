@@ -26,11 +26,19 @@ class PaperDocumentWidget extends StatelessWidget {
     // In dark mode: sleek dark card (0xFF1C1C1E) with white border & white badge,
     // ensuring maximum contrast and razor-sharp teeth definition with the white crocodile.
     final paperBg = isDark ? const Color(0xFF1C1C1E) : const Color(0xFFFFFFFF);
-    final borderColor = isDark ? const Color(0xFFFFFFFF) : const Color(0xFF1E1E1E);
-    final lineColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF222222);
-    final foldFlapColor = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFEBEBEB);
+    final borderColor = isDark
+        ? const Color(0xFFFFFFFF)
+        : const Color(0xFF1E1E1E);
+    final lineColor = isDark
+        ? const Color(0xFF8E8E93)
+        : const Color(0xFF222222);
+    final foldFlapColor = isDark
+        ? const Color(0xFF2C2C2E)
+        : const Color(0xFFEBEBEB);
     final badgeBg = isDark ? const Color(0xFFFFFFFF) : const Color(0xFF000000);
-    final badgeTextColor = isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
+    final badgeTextColor = isDark
+        ? const Color(0xFF000000)
+        : const Color(0xFFFFFFFF);
 
     return SizedBox(
       width: width,
@@ -151,16 +159,25 @@ class _PaperPainter extends CustomPainter {
       path.lineTo(size.width, maxFold);
     } else {
       path.lineTo(size.width - radius, 0);
-      path.arcToPoint(Offset(size.width, radius), radius: const Radius.circular(radius));
+      path.arcToPoint(
+        Offset(size.width, radius),
+        radius: const Radius.circular(radius),
+      );
     }
 
     // Right edge
     path.lineTo(size.width, size.height - radius);
-    path.arcToPoint(Offset(size.width - radius, size.height), radius: const Radius.circular(radius));
+    path.arcToPoint(
+      Offset(size.width - radius, size.height),
+      radius: const Radius.circular(radius),
+    );
 
     // Bottom edge
     path.lineTo(radius, size.height);
-    path.arcToPoint(Offset(0, size.height - radius), radius: const Radius.circular(radius));
+    path.arcToPoint(
+      Offset(0, size.height - radius),
+      radius: const Radius.circular(radius),
+    );
 
     // Left edge
     path.lineTo(0, radius);

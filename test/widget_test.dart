@@ -280,7 +280,9 @@ void main() {
   testWidgets(
     'Compress PDF Options displays presets, slider, and Compress PDF button',
     (tester) async {
-      final tempDir = Directory.systemTemp.createTempSync('compress_flow_test_');
+      final tempDir = Directory.systemTemp.createTempSync(
+        'compress_flow_test_',
+      );
       final tempPdf = File('${tempDir.path}/sample.pdf');
       tempPdf.writeAsBytesSync([1, 2, 3, 4, 5]);
 
@@ -305,7 +307,10 @@ void main() {
       expect(find.byType(Slider), findsOneWidget);
 
       // Verify button says "Compress PDF"
-      expect(find.widgetWithText(ElevatedButton, 'Compress PDF'), findsOneWidget);
+      expect(
+        find.widgetWithText(ElevatedButton, 'Compress PDF'),
+        findsOneWidget,
+      );
 
       // Verify on-device notice
       expect(find.textContaining('100% confidential'), findsOneWidget);

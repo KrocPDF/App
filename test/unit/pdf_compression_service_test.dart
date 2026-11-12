@@ -42,10 +42,18 @@ void main() {
       final testImg = img.Image(width: 800, height: 1000);
       for (int y = 0; y < 1000; y++) {
         for (int x = 0; x < 800; x++) {
-          testImg.setPixelRgb(x, y, (x * 4) % 255, (y * 2) % 255, (x + y) % 255);
+          testImg.setPixelRgb(
+            x,
+            y,
+            (x * 4) % 255,
+            (y * 2) % 255,
+            (x + y) % 255,
+          );
         }
       }
-      final highQualityJpg = Uint8List.fromList(img.encodeJpg(testImg, quality: 95));
+      final highQualityJpg = Uint8List.fromList(
+        img.encodeJpg(testImg, quality: 95),
+      );
       final pdf = pw.Document();
       pdf.addPage(
         pw.Page(

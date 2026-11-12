@@ -117,8 +117,9 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
       await Printing.layoutPdf(onLayout: (_) => bytes, name: doc.title);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Print failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Print failed: $e')));
       }
     }
   }
@@ -419,8 +420,9 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to import file: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to import file: $e')));
       }
     }
   }
@@ -571,10 +573,12 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
                               color: doc.filePath.toLowerCase().endsWith('.pdf')
-                                  ? const Color(0xFFFF9500)
-                                        .withValues(alpha: 0.4)
-                                  : const Color(0xFF007AFF)
-                                        .withValues(alpha: 0.4),
+                                  ? const Color(
+                                      0xFFFF9500,
+                                    ).withValues(alpha: 0.4)
+                                  : const Color(
+                                      0xFF007AFF,
+                                    ).withValues(alpha: 0.4),
                               width: 1,
                             ),
                           ),

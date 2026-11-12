@@ -7,12 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:pdfrx/pdfrx.dart' as rx;
 import 'package:syncfusion_flutter_pdf/pdf.dart' as sf;
 
-enum PdfCompressionPreset {
-  extreme,
-  recommended,
-  basic,
-  custom,
-}
+enum PdfCompressionPreset { extreme, recommended, basic, custom }
 
 class CompressedPdfResult {
   final String outputPath;
@@ -32,7 +27,9 @@ class CompressedPdfResult {
   });
 
   double get reductionPercentage {
-    if (originalSizeBytes <= 0 || fileSizeBytes >= originalSizeBytes) return 0.0;
+    if (originalSizeBytes <= 0 || fileSizeBytes >= originalSizeBytes) {
+      return 0.0;
+    }
     return ((originalSizeBytes - fileSizeBytes) / originalSizeBytes) * 100;
   }
 
@@ -40,8 +37,12 @@ class CompressedPdfResult {
   String get formattedOriginalSize => _formatSize(originalSizeBytes);
 
   static String _formatSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    if (bytes < 1024) {
+      return '$bytes B';
+    }
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
     return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
   }
 }
@@ -107,7 +108,10 @@ class PdfCompressionService {
       for (int i = 0; i < totalPages; i++) {
         final pageNum = i + 1;
         final stepProgress = 0.3 + (0.55 * (i / totalPages));
-        onProgress?.call('Optimizing page $pageNum of $totalPages...', stepProgress);
+        onProgress?.call(
+          'Optimizing page $pageNum of $totalPages...',
+          stepProgress,
+        );
 
         final page = doc.pages[i];
         final rendered = await page.render(
@@ -166,7 +170,8 @@ class PdfCompressionService {
       bestSize = sfOnlyBytes.length;
       chosenBytes = sfOnlyBytes;
     }
-    if (rasterCompressedBytes != null && rasterCompressedBytes.length < bestSize) {
+    if (rasterCompressedBytes != null &&
+        rasterCompressedBytes.length < bestSize) {
       bestSize = rasterCompressedBytes.length;
       chosenBytes = rasterCompressedBytes;
     }

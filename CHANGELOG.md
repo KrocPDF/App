@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Branded launch animation sequence (`LaunchAnimationScreen` and `LaunchGate`) featuring paper drop, conversion to PDF document, crocodile bite interaction, carrier motion, and trail reveal into the KrocPDF wordmark.
+- Wall-clock monotonic `Stopwatch` + `Ticker` timing engine ensuring a consistent 4.2-second launch pacing across all display refresh rates (60Hz, 90Hz, 120Hz).
+- Adaptive monochrome dark-mode document styling ensuring high-contrast teeth and jaw silhouette visibility across both light and dark themes.
+- On-device PDF compression engine (`PdfCompressionService`) with quality presets and custom slider.
 - Multi-tier GitHub Actions CI/CD pipeline (`pr-checks.yml`, `release-checks.yml`, `release-drafter.yml`).
 - PR validation check for Release Notes / Changelog entry updates.
 - Standard open-source governance suite (`LICENSE`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`).

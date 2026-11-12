@@ -155,8 +155,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
       }
     }
   }
@@ -300,8 +301,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to pick files: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to pick files: $e')));
       }
     }
   }
@@ -658,8 +660,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to save file: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save file: $e')));
       }
     }
   }
@@ -720,15 +723,15 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     if (!await file.exists()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Compressed PDF file not found on disk.')),
+          const SnackBar(
+            content: Text('Compressed PDF file not found on disk.'),
+          ),
         );
       }
       return;
     }
     // ignore: deprecated_member_use
-    await Share.shareXFiles(
-      [XFile(_compressResult!.outputPath)],
-    );
+    await Share.shareXFiles([XFile(_compressResult!.outputPath)]);
   }
 
   Future<void> _handleDownloadCompressedPdf() async {
@@ -737,18 +740,22 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     if (!await file.exists()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Compressed PDF file not found on disk.')),
+          const SnackBar(
+            content: Text('Compressed PDF file not found on disk.'),
+          ),
         );
       }
       return;
     }
 
     try {
-      await ref.read(savedFilesProvider.notifier).addExternalFile(
-        file,
-        customTitle: _compressResult!.fileName,
-        sourceType: SavedDocumentSource.compress,
-      );
+      await ref
+          .read(savedFilesProvider.notifier)
+          .addExternalFile(
+            file,
+            customTitle: _compressResult!.fileName,
+            sourceType: SavedDocumentSource.compress,
+          );
 
       if (mounted) {
         setState(() {
@@ -763,9 +770,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save file: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save file: $e')));
       }
     }
   }
@@ -812,7 +819,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
           (_currentStepIndex == 0 && _selectedImagePath != null) ||
           (_currentStepIndex == 1);
     } else if (_isCompressPdf) {
-      canGoNext = (_currentStepIndex == 0 && _selectedFiles.isNotEmpty) ||
+      canGoNext =
+          (_currentStepIndex == 0 && _selectedFiles.isNotEmpty) ||
           (_currentStepIndex == 1);
     } else if (widget.toolId == 'office_to_pdf') {
       // Office to PDF is UI scaffolding only in this phase
@@ -870,9 +878,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                           } else if (_isCompressPdf) {
                             if (index == 0) {
                               setState(() => _currentStepIndex = index);
-                            } else if (index == 1 && _selectedFiles.isNotEmpty) {
+                            } else if (index == 1 &&
+                                _selectedFiles.isNotEmpty) {
                               setState(() => _currentStepIndex = index);
-                            } else if (index == 2 && _selectedFiles.isNotEmpty) {
+                            } else if (index == 2 &&
+                                _selectedFiles.isNotEmpty) {
                               _startCompression();
                             } else if (index == 3 && _compressResult != null) {
                               setState(() => _currentStepIndex = index);
@@ -938,7 +948,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    if (_currentStepIndex > 0 && !_isConverting && !_isCompressing)
+                    if (_currentStepIndex > 0 &&
+                        !_isConverting &&
+                        !_isCompressing)
                       OutlinedButton(
                         onPressed: () => setState(() => _currentStepIndex--),
                         child: const Text('Back'),
@@ -951,7 +963,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                             ? () {
                                 if (_isImageConvert && _currentStepIndex == 1) {
                                   _startConversion();
-                                } else if (_isCompressPdf && _currentStepIndex == 1) {
+                                } else if (_isCompressPdf &&
+                                    _currentStepIndex == 1) {
                                   _startCompression();
                                 } else {
                                   setState(() => _currentStepIndex++);
@@ -962,14 +975,18 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                           _isImageConvert && _currentStepIndex == 1
                               ? 'Convert to $_targetFormat'
                               : _isCompressPdf && _currentStepIndex == 1
-                                  ? 'Compress PDF'
-                                  : 'Next step',
+                              ? 'Compress PDF'
+                              : 'Next step',
                         ),
                       )
                     else
                       ElevatedButton(
                         onPressed: _resetFlow,
-                        child: Text(_isCompressPdf ? 'Compress another' : 'Convert another'),
+                        child: Text(
+                          _isCompressPdf
+                              ? 'Compress another'
+                              : 'Convert another',
+                        ),
                       ),
                   ],
                 ),
@@ -2343,14 +2360,25 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     );
   }
 
-  Widget _buildCompressPdfOptionsStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildCompressPdfOptionsStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     if (_selectedFiles.isEmpty) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.warning_amber_rounded, size: 36, color: Colors.orange),
+          const Icon(
+            Icons.warning_amber_rounded,
+            size: 36,
+            color: Colors.orange,
+          ),
           const SizedBox(height: 12),
-          const Text('No PDF file selected.', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+            'No PDF file selected.',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: () => setState(() => _currentStepIndex = 0),
@@ -2390,7 +2418,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                   color: const Color(0xFFFF9500).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFF9500), size: 22),
+                child: const Icon(
+                  Icons.picture_as_pdf_outlined,
+                  color: Color(0xFFFF9500),
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -2401,7 +2433,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                       fileName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -2441,7 +2476,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
             _buildPresetChip(
               label: 'Recommended',
               sublabel: 'Balanced (65%)',
-              isSelected: _compressionPreset == PdfCompressionPreset.recommended,
+              isSelected:
+                  _compressionPreset == PdfCompressionPreset.recommended,
               onTap: () {
                 setState(() {
                   _compressionPreset = PdfCompressionPreset.recommended;
@@ -2545,7 +2581,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     );
   }
 
-  Widget _buildCompressPdfProgressStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildCompressPdfProgressStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     if (_compressError != null) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -2624,7 +2664,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     );
   }
 
-  Widget _buildCompressPdfResultStep(BuildContext context, Color borderColor, bool isDark) {
+  Widget _buildCompressPdfResultStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
     final res = _compressResult;
     if (res == null) {
       return const Center(child: Text('No result available.'));
@@ -2683,14 +2727,21 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                   color: const Color(0xFFFF9500).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFFF9500), size: 30),
+                child: const Icon(
+                  Icons.picture_as_pdf_outlined,
+                  color: Color(0xFFFF9500),
+                  size: 30,
+                ),
               ),
               const SizedBox(height: 14),
               Text(
                 res.fileName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 8),
               Row(
@@ -2718,7 +2769,10 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
               if (!isOptimal) ...[
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
@@ -2743,9 +2797,18 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
           alignment: WrapAlignment.center,
           children: [
             ElevatedButton.icon(
-              onPressed: _isCompressedSavedToFiles ? null : _handleDownloadCompressedPdf,
-              icon: Icon(_isCompressedSavedToFiles ? Icons.check : Icons.download_outlined, size: 18),
-              label: Text(_isCompressedSavedToFiles ? 'Saved to Files' : 'Save to Files'),
+              onPressed: _isCompressedSavedToFiles
+                  ? null
+                  : _handleDownloadCompressedPdf,
+              icon: Icon(
+                _isCompressedSavedToFiles
+                    ? Icons.check
+                    : Icons.download_outlined,
+                size: 18,
+              ),
+              label: Text(
+                _isCompressedSavedToFiles ? 'Saved to Files' : 'Save to Files',
+              ),
             ),
             ElevatedButton.icon(
               onPressed: _handleShareCompressedPdf,

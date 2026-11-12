@@ -6,9 +6,5 @@ import 'app.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(
-    const ProviderScope(
-      child: KrocApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: KrocApp()));
 }
