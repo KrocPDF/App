@@ -297,15 +297,6 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
         duration: Duration(milliseconds: (_totalDuration * 1000).round()),
       );
 
-      int lastLogged = 0;
-      _controller.addListener(() {
-        final now = DateTime.now().millisecondsSinceEpoch;
-        if (now - lastLogged > 400 || _controller.value >= 1.0) {
-          lastLogged = now;
-          debugPrint('[LaunchTiming] TICK v=${_controller.value.toStringAsFixed(3)} at $now');
-        }
-      });
-
       _ticker = createTicker((Duration elapsed) {
         if (_isFinished) return;
 
@@ -328,8 +319,7 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
       if (widget.debugT != null) {
         _controller.value = (widget.debugT! / _totalDuration).clamp(0.0, 1.0);
       }
-    } catch (e, stack) {
-      debugPrint('[LaunchTiming] EXCEPTION in initState: $e\n$stack');
+    } catch (_) {
       _finish('init_exception');
     }
   }
@@ -362,7 +352,6 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
       _reducedMotionTimer = Timer(const Duration(milliseconds: 800), () => _finish('reduced_motion'));
     } else if (!_isReducedMotion && !_hasStarted && widget.debugT == null) {
       _hasStarted = true;
-      debugPrint('[LaunchTiming] ANIMATION_STARTED (controller.value=${_controller.value}, debugT=${widget.debugT}) at ${DateTime.now().millisecondsSinceEpoch}');
       _stopwatch.start();
       _ticker?.start();
     }
@@ -375,7 +364,6 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
     if (_ticker?.isTicking ?? false) {
       _ticker?.stop();
     }
-    debugPrint('[LaunchTiming] ANIMATION_FINISHED ($reason) at ${DateTime.now().millisecondsSinceEpoch}');
     _watchdogTimer?.cancel();
     _reducedMotionTimer?.cancel();
     if (mounted) {
