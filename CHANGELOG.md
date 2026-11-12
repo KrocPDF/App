@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Dual-engine GitHub Actions auto-labeler workflow (`.github/workflows/labeler.yml`) for PRs and Issues.
+- 34 custom taxonomy labels for KrocPDF scopes, platforms, processing modes, and semver (`.github/labels.json`).
+- Path-based label configuration (`.github/labeler.yml`) for automated component tagging.
+- Release Drafter integration with newly classified label taxonomy.
 - Multi-tier GitHub Actions CI/CD pipeline (`pr-checks.yml`, `release-checks.yml`, `release-drafter.yml`).
 - PR validation check for Release Notes / Changelog entry updates.
 - Standard open-source governance suite (`LICENSE`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`).
