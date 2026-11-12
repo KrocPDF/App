@@ -41,3 +41,4 @@
 
   { "name": "skip-changelog", "color": "d4c5f9", "description": "Skip release notes requirement in PR checks" }
 ]
+
