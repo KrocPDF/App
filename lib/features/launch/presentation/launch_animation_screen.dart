@@ -340,6 +340,19 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
       if (_ticker?.isTicking ?? false) _ticker?.stop();
       _controller.value = (widget.debugT! / _totalDuration).clamp(0.0, 1.0);
       _watchdogTimer?.cancel();
+    } else if (oldWidget.debugT != null && !_isFinished && !_isReducedMotion) {
+      _hasStarted = true;
+      _stopwatch
+        ..reset()
+        ..start();
+      if (!(_ticker?.isTicking ?? false)) {
+        _ticker?.start();
+      }
+      _watchdogTimer?.cancel();
+      _watchdogTimer = Timer(
+        const Duration(milliseconds: 6000),
+        () => _finish('watchdog'),
+      );
     }
   }
 
@@ -405,136 +418,117 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
     final subtextColor = _LaunchColors.subtext(isDark);
 
     if (_isReducedMotion) {
-      return Material(
-        type: MaterialType.transparency,
-        child: Container(
-          color: bgColor,
-          child: Center(child: _ReducedMotionLogo(isDark: isDark)),
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.debugT == null ? () => _finish('tap_skip') : null,
+        child: Material(
+          type: MaterialType.transparency,
+          child: Container(
+            color: bgColor,
+            child: Center(child: _ReducedMotionLogo(isDark: isDark)),
+          ),
         ),
       );
     }
 
-    return Material(
-      type: MaterialType.transparency,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          final t = widget.debugT ?? (_controller.value * _totalDuration);
-          final state = LaunchTimelineState.compute(t);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.debugT == null ? () => _finish('tap_skip') : null,
+      child: Material(
+        type: MaterialType.transparency,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            final t = widget.debugT ?? (_controller.value * _totalDuration);
+            final state = LaunchTimelineState.compute(t);
 
-          return Opacity(
-            opacity: state.sceneOpacity.clamp(0.0, 1.0),
-            child: Container(
-              color: bgColor,
-              child: Center(
-                child: SizedBox(
-                  width: 360,
-                  height: 600,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    clipBehavior: Clip.none,
-                    children: [
-                      // 1. PDF Document Icon in middle of screen (Drops, folds, gets carried away in croc's jaws)
-                      if (state.pdfOpacity > 0.001)
-                        Transform.translate(
-                          offset: Offset(state.paperX, state.paperY),
-                          child: Opacity(
-                            opacity: (state.paperOpacity * state.pdfOpacity)
-                                .clamp(0.0, 1.0),
-                            child: Transform.scale(
-                              scaleX: state.pdfScaleX,
-                              scaleY: state.pdfScaleY,
-                              origin: const Offset(31.0, 40.0),
-                              child: PaperDocumentWidget(
-                                fold: state.fold,
-                                textLinesOpacity: state.textLinesOpacity,
-                                pdfBadgeOpacity: state.pdfBadgeOpacity,
-                                isDark: isDark,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      // 2. Wordmark — Revealed smoothly as crocodile moves rightward
-                      if (state.revealProgress > 0.001)
-                        Transform.translate(
-                          offset: const Offset(0, 0.0),
-                          child: Opacity(
-                            opacity: state.wordmarkOpacity.clamp(0.0, 1.0),
-                            child: ClipRect(
-                              clipper: _WordmarkRevealClipper(
-                                state.revealProgress * 260.0,
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'KrocPDF',
-                                    style: TextStyle(
-                                      color: textColor,
-                                      fontSize: 34,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Fast. Private. On-device.',
-                                    style: TextStyle(
-                                      color: subtextColor,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      letterSpacing: 0.2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      // 3. Crocodile entering from left, eating the file, and moving rightward
-                      Transform.translate(
-                        offset: Offset(state.crocX, -4.0),
-                        child: Transform.scale(
-                          scale: state.crocScale,
-                          origin: const Offset(80.0, 80.0),
-                          child: SizedBox(
-                            width: 160,
-                            height: 160,
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                // Solid Upper Head and Body (Keeps body & neck 100% intact)
-                                ClipPath(
-                                  clipper: const _UpperHeadClipper(),
-                                  child: Image.asset(
-                                    logoAsset,
-                                    width: 160,
-                                    height: 160,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      WidgetsBinding.instance
-                                          .addPostFrameCallback(
-                                            (_) => _finish('upper_asset_error'),
-                                          );
-                                      return const SizedBox.shrink();
-                                    },
-                                  ),
+            return Opacity(
+              opacity: state.sceneOpacity.clamp(0.0, 1.0),
+              child: Container(
+                color: bgColor,
+                child: Center(
+                  child: SizedBox(
+                    width: 360,
+                    height: 600,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        // 1. PDF Document Icon in middle of screen (Drops, folds, gets carried away in croc's jaws)
+                        if (state.pdfOpacity > 0.001)
+                          Transform.translate(
+                            offset: Offset(state.paperX, state.paperY),
+                            child: Opacity(
+                              opacity: (state.paperOpacity * state.pdfOpacity)
+                                  .clamp(0.0, 1.0),
+                              child: Transform.scale(
+                                scaleX: state.pdfScaleX,
+                                scaleY: state.pdfScaleY,
+                                origin: const Offset(31.0, 40.0),
+                                child: PaperDocumentWidget(
+                                  fold: state.fold,
+                                  textLinesOpacity: state.textLinesOpacity,
+                                  pdfBadgeOpacity: state.pdfBadgeOpacity,
+                                  isDark: isDark,
                                 ),
+                              ),
+                            ),
+                          ),
 
-                                // Articulating Lower Jaw (Articulates around true mouth cleft hinge)
-                                Transform.rotate(
-                                  angle:
-                                      14.0 * (math.pi / 180.0) * state.mouthA,
-                                  alignment: Alignment.topLeft,
-                                  origin: const Offset(
-                                    160.0 * 190.0 / 512.0,
-                                    160.0 * 270.0 / 512.0,
-                                  ),
-                                  child: ClipPath(
-                                    clipper: const _LowerJawClipper(),
+                        // 2. Wordmark — Revealed smoothly as crocodile moves rightward
+                        if (state.revealProgress > 0.001)
+                          Transform.translate(
+                            offset: const Offset(0, 0.0),
+                            child: Opacity(
+                              opacity: state.wordmarkOpacity.clamp(0.0, 1.0),
+                              child: ClipRect(
+                                clipper: _WordmarkRevealClipper(
+                                  state.revealProgress * 260.0,
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'KrocPDF',
+                                      style: TextStyle(
+                                        color: textColor,
+                                        fontSize: 34,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Fast. Private. On-device.',
+                                      style: TextStyle(
+                                        color: subtextColor,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        // 3. Crocodile entering from left, eating the file, and moving rightward
+                        Transform.translate(
+                          offset: Offset(state.crocX, -4.0),
+                          child: Transform.scale(
+                            scale: state.crocScale,
+                            origin: const Offset(80.0, 80.0),
+                            child: SizedBox(
+                              width: 160,
+                              height: 160,
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  // Solid Upper Head and Body (Keeps body & neck 100% intact)
+                                  ClipPath(
+                                    clipper: const _UpperHeadClipper(),
                                     child: Image.asset(
                                       logoAsset,
                                       width: 160,
@@ -545,26 +539,56 @@ class _LaunchAnimationScreenState extends State<LaunchAnimationScreen>
                                             WidgetsBinding.instance
                                                 .addPostFrameCallback(
                                                   (_) => _finish(
-                                                    'lower_asset_error',
+                                                    'upper_asset_error',
                                                   ),
                                                 );
                                             return const SizedBox.shrink();
                                           },
                                     ),
                                   ),
-                                ),
-                              ],
+
+                                  // Articulating Lower Jaw (Articulates around true mouth cleft hinge)
+                                  Transform.rotate(
+                                    angle:
+                                        14.0 * (math.pi / 180.0) * state.mouthA,
+                                    alignment: Alignment.topLeft,
+                                    origin: const Offset(
+                                      160.0 * 190.0 / 512.0,
+                                      160.0 * 270.0 / 512.0,
+                                    ),
+                                    child: ClipPath(
+                                      clipper: const _LowerJawClipper(),
+                                      child: Image.asset(
+                                        logoAsset,
+                                        width: 160,
+                                        height: 160,
+                                        fit: BoxFit.contain,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                              WidgetsBinding.instance
+                                                  .addPostFrameCallback(
+                                                    (_) => _finish(
+                                                      'lower_asset_error',
+                                                    ),
+                                                  );
+                                              return const SizedBox.shrink();
+                                            },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

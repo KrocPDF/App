@@ -172,12 +172,12 @@
 - Date: 2026-11-04
 - Change: Replaced D-014's artificial 2-second `Future.delayed` in `lib/main.dart` with a native Flutter launch animation sequence (`lib/features/launch/`) hosted inside a `LaunchGate` in `lib/app.dart`.
 - Why:
-  1. Branded storytelling on cold starts: Paper drops in from top, morphs/folds into a PDF icon, the KrocPDF crocodile mark enters from the left and lunges/eats the PDF document, settling in the center while the "KrocPDF - Fast. Private. On-device." wordmark reveals and holds cleanly for 0.6s before cross-fading to Home. Total duration is ~3.0s.
+  1. Branded storytelling on cold starts: Paper drops in from top, morphs/folds into a PDF icon, the KrocPDF crocodile mark enters from the left and lunges/eats the PDF document, settling in the center while the "KrocPDF - Fast. Private. On-device." wordmark reveals and holds cleanly for 0.6s before cross-fading to Home. Total duration is 4.2s.
   2. In-memory cold-start flag: Tracks `LaunchGate.hasCompletedLaunch` in memory so the animation plays exclusively on true cold start (process creation), and is completely bypassed on warm resumes, app switching, and in-app navigation. An in-memory flag guarantees that fresh installs and reinstalls always play the animation.
   3. Router decoupling: Hosted in `MaterialApp.router`'s `builder` property via `LaunchGate`, keeping GoRouter state, `StatefulShellRoute` branches, bottom navigation, and deep links completely intact.
   4. Robust accessibility and safety nets:
      - Respects `MediaQuery.disableAnimationsOf(context)` exclusively: bypasses motion and displays a brief static logo/wordmark before transitioning to Home.
-     - 5-second watchdog timer guarantees fallback to Home if the animation is interrupted.
+     - 6000 ms watchdog timer guarantees fallback to Home if the animation is interrupted.
      - Asset decoding errors trigger immediate graceful fallback to Home without blocking app startup.
      - Tap anywhere immediately skips the sequence.
 - Status: Accepted

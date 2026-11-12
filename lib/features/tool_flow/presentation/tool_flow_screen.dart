@@ -71,6 +71,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
   String? _compressError;
   CompressedPdfResult? _compressResult;
   bool _isCompressedSavedToFiles = false;
+  bool _isSavingCompressedPdf = false;
 
   // Multi-tool files state
   final List<File> _selectedFiles = [];
@@ -672,6 +673,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     final file = _selectedFiles.first;
     if (!file.existsSync()) {
       setState(() {
+        _currentStepIndex = 2;
+        _isCompressing = false;
         _compressError = 'Selected PDF file no longer exists on disk.';
       });
       return;
@@ -681,6 +684,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       _currentStepIndex = 2;
       _isCompressing = true;
       _compressError = null;
+      _compressResult = null;
       _compressStage = 'Analyzing PDF structure...';
       _compressProgress = 0.1;
       _isCompressedSavedToFiles = false;
@@ -735,20 +739,25 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
   }
 
   Future<void> _handleDownloadCompressedPdf() async {
-    if (_compressResult == null || _isCompressedSavedToFiles) return;
-    final file = File(_compressResult!.outputPath);
-    if (!await file.exists()) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Compressed PDF file not found on disk.'),
-          ),
-        );
-      }
+    if (_compressResult == null ||
+        _isCompressedSavedToFiles ||
+        _isSavingCompressedPdf) {
       return;
     }
-
+    _isSavingCompressedPdf = true;
     try {
+      final file = File(_compressResult!.outputPath);
+      if (!await file.exists()) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Compressed PDF file not found on disk.'),
+            ),
+          );
+        }
+        return;
+      }
+
       await ref
           .read(savedFilesProvider.notifier)
           .addExternalFile(
@@ -774,6 +783,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text('Failed to save file: $e')));
       }
+    } finally {
+      _isSavingCompressedPdf = false;
     }
   }
 

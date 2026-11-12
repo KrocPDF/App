@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart' as p;
@@ -8,6 +8,15 @@ import 'package:pdfrx/pdfrx.dart' as rx;
 import 'package:syncfusion_flutter_pdf/pdf.dart' as sf;
 
 enum PdfCompressionPreset { extreme, recommended, basic, custom }
+
+typedef PdfRasterCompressor =
+    Future<Uint8List?> Function({
+      required String inputPath,
+      required int quality,
+      required double targetDpi,
+      required void Function(int pageCount) onPageCountDetected,
+      void Function(String status, double? progress)? onProgress,
+    });
 
 class CompressedPdfResult {
   final String outputPath;
@@ -48,7 +57,9 @@ class CompressedPdfResult {
 }
 
 class PdfCompressionService {
-  const PdfCompressionService();
+  final PdfRasterCompressor? rasterCompressor;
+
+  const PdfCompressionService({this.rasterCompressor});
 
   Future<CompressedPdfResult> compressPdf({
     required String inputPath,
@@ -67,21 +78,33 @@ class PdfCompressionService {
     onProgress?.call('Analyzing PDF structure...', 0.1);
 
     int pageCount = 1;
+    bool anyParserSucceeded = false;
+
+    sf.PdfDocument? inspectDoc;
     try {
-      final sfDoc = sf.PdfDocument(inputBytes: originalBytes);
-      pageCount = sfDoc.pages.count;
-      sfDoc.dispose();
-    } catch (_) {}
+      inspectDoc = sf.PdfDocument(inputBytes: originalBytes);
+      pageCount = inspectDoc.pages.count;
+      anyParserSucceeded = true;
+    } catch (e) {
+      debugPrint('PdfCompressionService: Syncfusion inspect failed: $e');
+    } finally {
+      inspectDoc?.dispose();
+    }
 
     // 1. Lossless stream compression with Syncfusion
     onProgress?.call('Optimizing PDF streams...', 0.25);
     Uint8List? sfOnlyBytes;
+    sf.PdfDocument? sfCompressDoc;
     try {
-      final sfDoc = sf.PdfDocument(inputBytes: originalBytes);
-      sfDoc.compressionLevel = sf.PdfCompressionLevel.best;
-      sfOnlyBytes = Uint8List.fromList(sfDoc.saveSync());
-      sfDoc.dispose();
-    } catch (_) {}
+      sfCompressDoc = sf.PdfDocument(inputBytes: originalBytes);
+      sfCompressDoc.compressionLevel = sf.PdfCompressionLevel.best;
+      sfOnlyBytes = Uint8List.fromList(sfCompressDoc.saveSync());
+      anyParserSucceeded = true;
+    } catch (e) {
+      debugPrint('PdfCompressionService: Syncfusion stream pass failed: $e');
+    } finally {
+      sfCompressDoc?.dispose();
+    }
 
     // 2. Raster image recompression & downsampling
     // Effective DPI targets:
@@ -96,68 +119,42 @@ class PdfCompressionService {
     } else {
       targetDpi = 200.0;
     }
-    final double scale = targetDpi / 72.0;
 
     Uint8List? rasterCompressedBytes;
-    try {
-      final doc = await rx.PdfDocument.openFile(inputPath);
-      final totalPages = doc.pages.length;
-      pageCount = totalPages;
-
-      final outputPdf = pw.Document();
-      for (int i = 0; i < totalPages; i++) {
-        final pageNum = i + 1;
-        final stepProgress = 0.3 + (0.55 * (i / totalPages));
-        onProgress?.call(
-          'Optimizing page $pageNum of $totalPages...',
-          stepProgress,
+    if (rasterCompressor != null) {
+      try {
+        rasterCompressedBytes = await rasterCompressor!(
+          inputPath: inputPath,
+          quality: quality,
+          targetDpi: targetDpi,
+          onPageCountDetected: (count) => pageCount = count,
+          onProgress: onProgress,
         );
-
-        final page = doc.pages[i];
-        final rendered = await page.render(
-          fullWidth: page.width * scale,
-          fullHeight: page.height * scale,
-        );
-
-        if (rendered != null) {
-          final decoded = img.Image.fromBytes(
-            width: rendered.width,
-            height: rendered.height,
-            bytes: rendered.pixels.buffer,
-            order: img.ChannelOrder.bgra,
-          );
-          rendered.dispose();
-
-          final compressedJpg = Uint8List.fromList(
-            img.encodeJpg(decoded, quality: quality),
-          );
-
-          outputPdf.addPage(
-            pw.Page(
-              pageFormat: p.PdfPageFormat(page.width, page.height),
-              margin: pw.EdgeInsets.zero,
-              build: (context) => pw.FullPage(
-                ignoreMargins: true,
-                child: pw.Image(
-                  pw.MemoryImage(compressedJpg),
-                  fit: pw.BoxFit.fill,
-                ),
-              ),
-            ),
-          );
+        if (rasterCompressedBytes != null) {
+          anyParserSucceeded = true;
         }
+      } catch (e) {
+        debugPrint('PdfCompressionService: Custom raster pass failed: $e');
       }
-      await doc.dispose();
+    } else {
+      final rasterResult = await _compressWithPdfrx(
+        inputPath: inputPath,
+        quality: quality,
+        targetDpi: targetDpi,
+        onPageCountDetected: (count) => pageCount = count,
+        onProgress: onProgress,
+      );
+      if (rasterResult.parserSucceeded) {
+        anyParserSucceeded = true;
+      }
+      rasterCompressedBytes = rasterResult.bytes;
+    }
 
-      onProgress?.call('Rebuilding optimized PDF...', 0.88);
-      final rawRasterBytes = await outputPdf.save();
-
-      // Run stream compression on the raster-rebuilt PDF
-      final sfRasterDoc = sf.PdfDocument(inputBytes: rawRasterBytes);
-      sfRasterDoc.compressionLevel = sf.PdfCompressionLevel.best;
-      rasterCompressedBytes = Uint8List.fromList(sfRasterDoc.saveSync());
-      sfRasterDoc.dispose();
-    } catch (_) {}
+    if (!anyParserSucceeded) {
+      throw const FormatException(
+        'Unable to parse or compress the selected PDF file.',
+      );
+    }
 
     onProgress?.call('Finalizing file...', 0.96);
 
@@ -207,5 +204,99 @@ class PdfCompressionService {
       pageCount: pageCount,
       isAlreadyOptimal: isAlreadyOptimal,
     );
+  }
+
+  Future<({Uint8List? bytes, bool parserSucceeded})> _compressWithPdfrx({
+    required String inputPath,
+    required int quality,
+    required double targetDpi,
+    required void Function(int pageCount) onPageCountDetected,
+    void Function(String status, double? progress)? onProgress,
+  }) async {
+    final double scale = targetDpi / 72.0;
+    rx.PdfDocument? doc;
+    sf.PdfDocument? sfRasterDoc;
+    bool parserSucceeded = false;
+
+    try {
+      doc = await rx.PdfDocument.openFile(inputPath);
+      parserSucceeded = true;
+      final totalPages = doc.pages.length;
+      if (totalPages == 0) {
+        return (bytes: null, parserSucceeded: true);
+      }
+      onPageCountDetected(totalPages);
+
+      final outputPdf = pw.Document();
+      bool allPagesRendered = true;
+
+      for (int i = 0; i < totalPages; i++) {
+        final pageNum = i + 1;
+        final stepProgress = 0.3 + (0.55 * (i / totalPages));
+        onProgress?.call(
+          'Optimizing page $pageNum of $totalPages...',
+          stepProgress,
+        );
+
+        final page = doc.pages[i];
+        rx.PdfImage? rendered;
+        try {
+          rendered = await page.render(
+            fullWidth: page.width * scale,
+            fullHeight: page.height * scale,
+          );
+          if (rendered == null) {
+            allPagesRendered = false;
+            break;
+          }
+
+          final decoded = img.Image.fromBytes(
+            width: rendered.width,
+            height: rendered.height,
+            bytes: rendered.pixels.buffer,
+            order: img.ChannelOrder.bgra,
+          );
+
+          final compressedJpg = Uint8List.fromList(
+            img.encodeJpg(decoded, quality: quality),
+          );
+
+          outputPdf.addPage(
+            pw.Page(
+              pageFormat: p.PdfPageFormat(page.width, page.height),
+              margin: pw.EdgeInsets.zero,
+              build: (context) => pw.FullPage(
+                ignoreMargins: true,
+                child: pw.Image(
+                  pw.MemoryImage(compressedJpg),
+                  fit: pw.BoxFit.fill,
+                ),
+              ),
+            ),
+          );
+        } finally {
+          rendered?.dispose();
+        }
+      }
+
+      if (!allPagesRendered) {
+        return (bytes: null, parserSucceeded: parserSucceeded);
+      }
+
+      onProgress?.call('Rebuilding optimized PDF...', 0.88);
+      final rawRasterBytes = await outputPdf.save();
+
+      // Run stream compression on the raster-rebuilt PDF
+      sfRasterDoc = sf.PdfDocument(inputBytes: rawRasterBytes);
+      sfRasterDoc.compressionLevel = sf.PdfCompressionLevel.best;
+      final compressed = Uint8List.fromList(sfRasterDoc.saveSync());
+      return (bytes: compressed, parserSucceeded: parserSucceeded);
+    } catch (e) {
+      debugPrint('PdfCompressionService: Raster pass failed: $e');
+      return (bytes: null, parserSucceeded: parserSucceeded);
+    } finally {
+      sfRasterDoc?.dispose();
+      await doc?.dispose();
+    }
   }
 }

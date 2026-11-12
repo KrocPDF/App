@@ -39,6 +39,13 @@ void main() {
 
   group('PdfCompressionService execution', () {
     test('compresses image-heavy PDF and reduces file size', () async {
+      final tempDir = Directory.systemTemp.createTempSync('krocpdf_test_');
+      addTearDown(() {
+        if (tempDir.existsSync()) {
+          tempDir.deleteSync(recursive: true);
+        }
+      });
+
       final testImg = img.Image(width: 800, height: 1000);
       for (int y = 0; y < 1000; y++) {
         for (int x = 0; x < 800; x++) {
@@ -65,15 +72,48 @@ void main() {
         ),
       );
       final originalBytes = await pdf.save();
-      final tempInput = File('test_unit_input_image.pdf');
+      final tempInput = File('${tempDir.path}/input_image.pdf');
       await tempInput.writeAsBytes(originalBytes);
 
-      const service = PdfCompressionService();
+      // Inject a pure-Dart rasterizer for headless VM unit tests where native
+      // pdfium binaries are unavailable.
+      final service = PdfCompressionService(
+        rasterCompressor:
+            ({
+              required String inputPath,
+              required int quality,
+              required double targetDpi,
+              required void Function(int pageCount) onPageCountDetected,
+              void Function(String status, double? progress)? onProgress,
+            }) async {
+              onPageCountDetected(1);
+              onProgress?.call('Optimizing page 1 of 1...', 0.5);
+              final recompressedJpg = Uint8List.fromList(
+                img.encodeJpg(testImg, quality: quality),
+              );
+              final rebuilt = pw.Document();
+              rebuilt.addPage(
+                pw.Page(
+                  pageFormat: p.PdfPageFormat.a4,
+                  margin: pw.EdgeInsets.zero,
+                  build: (context) => pw.FullPage(
+                    ignoreMargins: true,
+                    child: pw.Image(
+                      pw.MemoryImage(recompressedJpg),
+                      fit: pw.BoxFit.fill,
+                    ),
+                  ),
+                ),
+              );
+              return Uint8List.fromList(await rebuilt.save());
+            },
+      );
+
       final stages = <String>[];
       final result = await service.compressPdf(
         inputPath: tempInput.path,
         quality: 60,
-        outputDirectory: '.',
+        outputDirectory: tempDir.path,
         onProgress: (status, progress) {
           stages.add(status);
         },
@@ -83,13 +123,16 @@ void main() {
       expect(result.isAlreadyOptimal, isFalse);
       expect(result.reductionPercentage, greaterThan(0));
       expect(stages.isNotEmpty, isTrue);
-
-      if (tempInput.existsSync()) await tempInput.delete();
-      final out = File(result.outputPath);
-      if (out.existsSync()) await out.delete();
     });
 
     test('preserves file and marks optimal if already smallest', () async {
+      final tempDir = Directory.systemTemp.createTempSync('krocpdf_test_');
+      addTearDown(() {
+        if (tempDir.existsSync()) {
+          tempDir.deleteSync(recursive: true);
+        }
+      });
+
       final pdf = pw.Document();
       pdf.addPage(
         pw.Page(
@@ -98,22 +141,40 @@ void main() {
         ),
       );
       final originalBytes = await pdf.save();
-      final tempInput = File('test_unit_small.pdf');
+      final tempInput = File('${tempDir.path}/small.pdf');
       await tempInput.writeAsBytes(originalBytes);
 
       const service = PdfCompressionService();
       final result = await service.compressPdf(
         inputPath: tempInput.path,
         quality: 60,
-        outputDirectory: '.',
+        outputDirectory: tempDir.path,
       );
 
       expect(result.fileSizeBytes, lessThanOrEqualTo(result.originalSizeBytes));
       expect(result.isAlreadyOptimal, isTrue);
+    });
 
-      if (tempInput.existsSync()) await tempInput.delete();
-      final out = File(result.outputPath);
-      if (out.existsSync()) await out.delete();
+    test('throws FormatException for unreadable or corrupt PDF', () async {
+      final tempDir = Directory.systemTemp.createTempSync('krocpdf_test_');
+      addTearDown(() {
+        if (tempDir.existsSync()) {
+          tempDir.deleteSync(recursive: true);
+        }
+      });
+
+      final corruptFile = File('${tempDir.path}/corrupt.pdf');
+      await corruptFile.writeAsBytes(Uint8List.fromList([1, 2, 3, 4, 5]));
+
+      const service = PdfCompressionService();
+      await expectLater(
+        () => service.compressPdf(
+          inputPath: corruptFile.path,
+          quality: 60,
+          outputDirectory: tempDir.path,
+        ),
+        throwsA(isA<FormatException>()),
+      );
     });
   });
 }

@@ -55,10 +55,12 @@ class _LaunchGateState extends State<LaunchGate> {
       children: [
         // Router / Home is mounted underneath
         widget.child,
-        // Launch animation overlay
-        LaunchAnimationScreen(
-          onComplete: _onLaunchComplete,
-          debugT: LaunchGate.debugT,
+        // Launch animation overlay (block accessibility traversal to covered router)
+        BlockSemantics(
+          child: LaunchAnimationScreen(
+            onComplete: _onLaunchComplete,
+            debugT: LaunchGate.debugT,
+          ),
         ),
       ],
     );

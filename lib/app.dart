@@ -22,7 +22,7 @@ final GoRouter _router = GoRouter(
       path: '/launch-preview',
       builder: (context, state) {
         final tStr = state.uri.queryParameters['t'];
-        final t = tStr != null ? double.tryParse(tStr) : 0.0;
+        final t = tStr != null ? double.tryParse(tStr) : null;
         return LaunchAnimationScreen(
           onComplete: () => context.go('/'),
           debugT: t,
