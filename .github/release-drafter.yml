@@ -3,15 +3,20 @@ tag-template: 'v$RESOLVED_VERSION'
 version-resolver:
   major:
     labels:
+      - 'semver: breaking'
       - 'major'
       - 'breaking-change'
   minor:
     labels:
+      - 'semver: minor'
+      - 'type: feature'
       - 'minor'
       - 'enhancement'
       - 'feature'
   patch:
     labels:
+      - 'semver: patch'
+      - 'type: bug'
       - 'patch'
       - 'bug'
       - 'fix'
@@ -20,29 +25,37 @@ version-resolver:
 categories:
   - title: '🚀 Features & Enhancements'
     labels:
+      - 'type: feature'
+      - 'type: enhancement'
       - 'feature'
       - 'enhancement'
   - title: '🐛 Bug Fixes'
     labels:
+      - 'type: bug'
       - 'fix'
       - 'bug'
+  - title: '⚡ Performance'
+    labels:
+      - 'type: performance'
   - title: '🔒 Security & Compliance'
     labels:
+      - 'type: security'
       - 'security'
   - title: '🛠 Build & CI/CD'
     labels:
+      - 'type: ci/cd'
       - 'ci'
       - 'build'
   - title: '📚 Documentation'
     labels:
+      - 'type: documentation'
       - 'documentation'
       - 'docs'
 
-change-template: '- $TITLE by @$AUTHOR in $NUMBER'
+change-template: '- $TITLE by @$AUTHOR in #$NUMBER'
 template: |
   ## What's Changed in this Release
 
   $CHANGES
 
   **Full Changelog**: https://github.com/KrocPDF/App/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
-
