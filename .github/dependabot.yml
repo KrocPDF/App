@@ -31,3 +31,4 @@ updates:
       - "platform: android"
       - "skip-changelog"
     open-pull-requests-limit: 5
+
