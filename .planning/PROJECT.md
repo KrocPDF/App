@@ -15,3 +15,16 @@
 - Image conversion and editing (JPG, PNG, HEIC, WEBP).
 - Local persistent file management (save, view, share, print, delete).
 
+## Current Milestone: v1.0-merge-pdf — On-Device Merge PDF (#22)
+**Goal:** Deliver a reliable, isolate-offloaded, on-device Merge PDF pipeline using `syncfusion_flutter_pdf`, supporting two PDFs (no images) with interactive password-unlock prompts for encrypted inputs.
+
+**Target features:**
+- Two-PDF selection, reordering, and validation (PDFs only).
+- On-device merge engine (`PdfMergeService` + `LocalProcessingService`) running in `Isolate.run()`.
+- Unified password prompt dialog supporting 1 or 2 password-protected PDFs with per-file labels.
+- Progress, Save to Files, Share, and Open in Viewer actions in `ToolFlowScreen`.
+
+## Evolution
+This document evolves at phase transitions and milestone boundaries.
+- Last updated: 2026-11-12 (Initialized `v1.0-merge-pdf` milestone for Issue #22)
+
