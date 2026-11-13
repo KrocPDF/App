@@ -15,6 +15,7 @@ import '../../features/tool_flow/domain/scanned_document.dart';
 import '../image_conversion_service.dart';
 import '../pdf_compression_service.dart';
 import '../pdf_merge_service.dart';
+import '../pdf_split_service.dart';
 import 'processing_service.dart';
 
 class LocalProcessingService implements ProcessingService {
@@ -118,6 +119,41 @@ class LocalProcessingService implements ProcessingService {
         );
       } catch (e) {
         return Failure(ProcessingFailed(reason: 'Failed to merge PDFs: $e'));
+      }
+    }
+
+    if (request.toolId == 'split_pdf') {
+      try {
+        if (request.filePaths.isEmpty) {
+          return const Failure(
+            ProcessingFailed(reason: 'No input PDF provided for splitting.'),
+          );
+        }
+        final groups = request.splitGroups;
+        if (groups == null || groups.isEmpty) {
+          return const Failure(
+            ProcessingFailed(reason: 'No split ranges or groups provided.'),
+          );
+        }
+        const splitter = PdfSplitService();
+        final password = request.passwords[request.filePaths.first];
+        final result = await splitter.splitPdf(
+          inputPath: request.filePaths.first,
+          groups: groups,
+          password: password,
+        );
+        return Success(
+          ProcessingResult(
+            outputFilePath: result.files.isNotEmpty
+                ? result.files.first.outputPath
+                : '',
+            outputFilePaths: result.files.map((f) => f.outputPath).toList(),
+            message: 'Successfully split into ${result.totalFiles} files.',
+            splitResult: result,
+          ),
+        );
+      } catch (e) {
+        return Failure(ProcessingFailed(reason: 'Failed to split PDF: $e'));
       }
     }
 
