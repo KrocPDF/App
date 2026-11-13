@@ -144,8 +144,9 @@ class LocalProcessingService implements ProcessingService {
         );
         return Success(
           ProcessingResult(
-            outputFilePath:
-                result.files.isNotEmpty ? result.files.first.outputPath : '',
+            outputFilePath: result.files.isNotEmpty
+                ? result.files.first.outputPath
+                : '',
             outputFilePaths: result.files.map((f) => f.outputPath).toList(),
             message: 'Successfully split into ${result.totalFiles} files.',
             splitResult: result,

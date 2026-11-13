@@ -50,8 +50,8 @@ class SplitGroup {
   String get rangeString => pageNumbers.isEmpty
       ? ''
       : (pageNumbers.length == 1
-          ? '${pageNumbers.first}'
-          : '${pageNumbers.first}–${pageNumbers.last}');
+            ? '${pageNumbers.first}'
+            : '${pageNumbers.first}–${pageNumbers.last}');
 
   /// Returns 0-based page indices for internal PDF page operations.
   List<int> get pageIndices => pageNumbers.map((p) => p - 1).toList();
@@ -84,7 +84,9 @@ class SplitValidationResult {
 
   /// Formats missing pages into friendly range strings (e.g. "4-7, 10").
   String formatMissingRanges() {
-    if (missingPages.isEmpty) return '';
+    if (missingPages.isEmpty) {
+      return '';
+    }
     final ranges = <String>[];
     int? rangeStart;
     int? prev;
@@ -129,8 +131,8 @@ class SplitOutputFile {
   String get sourceRange => pageNumbers.isEmpty
       ? ''
       : (pageNumbers.length == 1
-          ? '${pageNumbers.first}'
-          : '${pageNumbers.first}–${pageNumbers.last}');
+            ? '${pageNumbers.first}'
+            : '${pageNumbers.first}–${pageNumbers.last}');
 
   String get formattedSize {
     if (fileSizeBytes < 1024) {
@@ -169,47 +171,43 @@ class SplitRangeValidator {
     String input,
     int totalPages, {
     String prefix = 'document',
-  }) =>
-      validate(
-        mode: SplitMode.customRanges,
-        totalPages: totalPages,
-        customRangesInput: input,
-        prefix: prefix,
-      );
+  }) => validate(
+    mode: SplitMode.customRanges,
+    totalPages: totalPages,
+    customRangesInput: input,
+    prefix: prefix,
+  );
 
   static SplitValidationResult validateEveryNPages(
     int n,
     int totalPages, {
     String prefix = 'document',
-  }) =>
-      validate(
-        mode: SplitMode.everyNPages,
-        totalPages: totalPages,
-        everyN: n,
-        prefix: prefix,
-      );
+  }) => validate(
+    mode: SplitMode.everyNPages,
+    totalPages: totalPages,
+    everyN: n,
+    prefix: prefix,
+  );
 
   static SplitValidationResult validateExtractAllPages(
     int totalPages, {
     String prefix = 'document',
-  }) =>
-      validate(
-        mode: SplitMode.extractAll,
-        totalPages: totalPages,
-        prefix: prefix,
-      );
+  }) => validate(
+    mode: SplitMode.extractAll,
+    totalPages: totalPages,
+    prefix: prefix,
+  );
 
   static SplitValidationResult validateSplitIntoNParts(
     int parts,
     int totalPages, {
     String prefix = 'document',
-  }) =>
-      validate(
-        mode: SplitMode.equalParts,
-        totalPages: totalPages,
-        equalParts: parts,
-        prefix: prefix,
-      );
+  }) => validate(
+    mode: SplitMode.equalParts,
+    totalPages: totalPages,
+    equalParts: parts,
+    prefix: prefix,
+  );
 
   /// Parses and validates page ranges for any of the 4 Split modes.
   static SplitValidationResult validate({
@@ -381,8 +379,7 @@ class SplitRangeValidator {
           partIndex: i + 1,
           pageNumbers: pages,
           label: 'Part ${i + 1}: pages $rangeStr',
-          suggestedFileName:
-              '${prefix}_part${i + 1}_pages_$fileRangeStr.pdf',
+          suggestedFileName: '${prefix}_part${i + 1}_pages_$fileRangeStr.pdf',
         ),
       );
       currentStart = currentEnd + 1;
@@ -416,7 +413,9 @@ class SplitRangeValidator {
 
     for (final seg in segments) {
       final s = seg.trim();
-      if (s.isEmpty) continue;
+      if (s.isEmpty) {
+        continue;
+      }
 
       if (s.contains('-')) {
         final parts = s.split('-');
@@ -578,10 +577,7 @@ class PdfSplitService {
         if (msg.contains('password') ||
             msg.contains('encrypt') ||
             msg.contains('security')) {
-          return const PdfInspectionResult(
-            pageCount: 0,
-            isEncrypted: true,
-          );
+          return const PdfInspectionResult(pageCount: 0, isEncrypted: true);
         }
         throw FormatException('Unable to read PDF file: $e');
       } finally {
@@ -711,7 +707,8 @@ Map<String, dynamic> _isolateExecuteSplit({
           : '$suggestedFileName.pdf';
 
       // Disambiguate on-disk filename with unique timestamp
-      final diskName = '${cleanName.substring(0, cleanName.length - 4)}_${timestamp}_p${gIdx + 1}.pdf';
+      final diskName =
+          '${cleanName.substring(0, cleanName.length - 4)}_${timestamp}_p${gIdx + 1}.pdf';
       final diskPath = '$dirPath/$diskName';
 
       // 1. Create target document for this group ONLY
@@ -722,7 +719,8 @@ Map<String, dynamic> _isolateExecuteSplit({
         if (pIdx < 0 || pIdx >= totalSourcePages) {
           outDoc.dispose();
           return {
-            'error': 'Page index $pIdx is out of bounds (1..$totalSourcePages).',
+            'error':
+                'Page index $pIdx is out of bounds (1..$totalSourcePages).',
           };
         }
 
@@ -731,8 +729,8 @@ Map<String, dynamic> _isolateExecuteSplit({
         outDoc.pageSettings.size = sourcePage.size;
         outDoc.pageSettings.orientation =
             sourcePage.size.width > sourcePage.size.height
-                ? sf.PdfPageOrientation.landscape
-                : sf.PdfPageOrientation.portrait;
+            ? sf.PdfPageOrientation.landscape
+            : sf.PdfPageOrientation.portrait;
 
         final targetPage = outDoc.pages.add();
         targetPage.graphics.drawPdfTemplate(template, Offset.zero);
@@ -754,10 +752,7 @@ Map<String, dynamic> _isolateExecuteSplit({
       });
     }
 
-    return {
-      'files': outputList,
-      'totalSourcePages': totalSourcePages,
-    };
+    return {'files': outputList, 'totalSourcePages': totalSourcePages};
   } catch (e) {
     return {'error': 'Failed during PDF split execution: $e'};
   } finally {

@@ -92,15 +92,18 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
   final PdfSplitService _splitService = const PdfSplitService();
   final TextEditingController _splitPrefixController = TextEditingController();
   final TextEditingController _splitRangesController = TextEditingController();
-  final TextEditingController _splitEveryNController =
-      TextEditingController(text: '2');
-  final TextEditingController _splitPartsController =
-      TextEditingController(text: '2');
+  final TextEditingController _splitEveryNController = TextEditingController(
+    text: '2',
+  );
+  final TextEditingController _splitPartsController = TextEditingController(
+    text: '2',
+  );
   SplitMode _splitMode = SplitMode.customRanges;
   int _splitTotalPages = 1;
   bool _splitIsEncrypted = false;
-  SplitValidationResult _splitValidation =
-      const SplitValidationResult(isValid: false);
+  SplitValidationResult _splitValidation = const SplitValidationResult(
+    isValid: false,
+  );
   bool _isSplitting = false;
   String _splitStage = '';
   double? _splitProgress;
@@ -1119,8 +1122,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
 
       if (mounted) {
         setState(() {
-          _splitTotalPages =
-              inspection.pageCount > 0 ? inspection.pageCount : 1;
+          _splitTotalPages = inspection.pageCount > 0
+              ? inspection.pageCount
+              : 1;
           _splitIsEncrypted = inspection.isEncrypted;
           if (_splitPrefixController.text.isEmpty) {
             _splitPrefixController.text = baseName;
@@ -1174,7 +1178,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
   }
 
   Future<void> _promptOrStartSplit() async {
-    if (!_splitValidation.isValid || _selectedFiles.isEmpty) return;
+    if (!_splitValidation.isValid || _selectedFiles.isEmpty) {
+      return;
+    }
 
     // 1. Check for 15+ files warning
     if (_splitValidation.fileCount >= 15) {
@@ -1197,8 +1203,12 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
           ],
         ),
       );
-      if (proceed != true) return;
-      if (!mounted) return;
+      if (proceed != true) {
+        return;
+      }
+      if (!mounted) {
+        return;
+      }
     }
 
     // 2. Check for gap confirmation (> 2 omitted pages in customRanges)
@@ -1224,15 +1234,21 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
           ],
         ),
       );
-      if (proceed != true) return;
-      if (!mounted) return;
+      if (proceed != true) {
+        return;
+      }
+      if (!mounted) {
+        return;
+      }
     }
 
     _startSplit();
   }
 
   Future<void> _startSplit() async {
-    if (_selectedFiles.isEmpty || _isSplitting) return;
+    if (_selectedFiles.isEmpty || _isSplitting) {
+      return;
+    }
 
     final file = _selectedFiles.first;
     if (!await file.exists()) {
@@ -1298,11 +1314,13 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       for (final out in _splitResult!.outputFiles) {
         final f = File(out.outputPath);
         if (await f.exists()) {
-          await ref.read(savedFilesProvider.notifier).addExternalFile(
-            f,
-            customTitle: out.fileName,
-            sourceType: SavedDocumentSource.split,
-          );
+          await ref
+              .read(savedFilesProvider.notifier)
+              .addExternalFile(
+                f,
+                customTitle: out.fileName,
+                sourceType: SavedDocumentSource.split,
+              );
           savedCount++;
         }
       }
@@ -1332,9 +1350,12 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
   }
 
   Future<void> _handleShareAllSplitPdfs() async {
-    if (_splitResult == null || _splitResult!.outputFiles.isEmpty) return;
-    final xfiles =
-        _splitResult!.outputFiles.map((f) => XFile(f.outputPath)).toList();
+    if (_splitResult == null || _splitResult!.outputFiles.isEmpty) {
+      return;
+    }
+    final xfiles = _splitResult!.outputFiles
+        .map((f) => XFile(f.outputPath))
+        .toList();
     // ignore: deprecated_member_use
     await Share.shareXFiles(xfiles);
   }
@@ -1403,7 +1424,12 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                     return Expanded(
                       child: InkWell(
                         onTap: () {
-                          if (_isConverting || _isCompressing || _isMerging || _isSplitting) return;
+                          if (_isConverting ||
+                              _isCompressing ||
+                              _isMerging ||
+                              _isSplitting) {
+                            return;
+                          }
                           if (_isImageConvert) {
                             if (index == 0) {
                               setState(() => _currentStepIndex = index);
@@ -1504,7 +1530,11 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                       ? _buildSplitPdfResultStep(context, borderColor, isDark)
                       : Center(
                           child: SingleChildScrollView(
-                            child: _buildStepContent(context, borderColor, isDark),
+                            child: _buildStepContent(
+                              context,
+                              borderColor,
+                              isDark,
+                            ),
                           ),
                         ),
                 ),
@@ -1515,77 +1545,82 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: borderColor, width: 1)),
+                    border: Border(
+                      top: BorderSide(color: borderColor, width: 1),
+                    ),
                   ),
                   child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (_currentStepIndex > 0 &&
-                        !_isConverting &&
-                        !_isCompressing &&
-                        !_isMerging &&
-                        !_isSplitting)
-                      OutlinedButton(
-                        onPressed: () => setState(() => _currentStepIndex--),
-                        child: const Text('Back'),
-                      )
-                    else
-                      const SizedBox.shrink(),
-                    if (_currentStepIndex < _steps.length - 1)
-                      ElevatedButton(
-                        onPressed: canGoNext
-                            ? () {
-                                if (_isImageConvert && _currentStepIndex == 1) {
-                                  _startConversion();
-                                } else if (_isCompressPdf &&
-                                    _currentStepIndex == 1) {
-                                  _startCompression();
-                                } else if (_isMergePdf &&
-                                    _currentStepIndex == 1) {
-                                  _startMerge();
-                                } else if (_isSplitPdf &&
-                                    _currentStepIndex == 1) {
-                                  _promptOrStartSplit();
-                                } else {
-                                  setState(() {
-                                    _currentStepIndex++;
-                                    if (_isSplitPdf &&
-                                        _currentStepIndex == 1 &&
-                                        _selectedFiles.isNotEmpty) {
-                                      _inspectAndInitSplit(_selectedFiles.first);
-                                    }
-                                  });
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (_currentStepIndex > 0 &&
+                          !_isConverting &&
+                          !_isCompressing &&
+                          !_isMerging &&
+                          !_isSplitting)
+                        OutlinedButton(
+                          onPressed: () => setState(() => _currentStepIndex--),
+                          child: const Text('Back'),
+                        )
+                      else
+                        const SizedBox.shrink(),
+                      if (_currentStepIndex < _steps.length - 1)
+                        ElevatedButton(
+                          onPressed: canGoNext
+                              ? () {
+                                  if (_isImageConvert &&
+                                      _currentStepIndex == 1) {
+                                    _startConversion();
+                                  } else if (_isCompressPdf &&
+                                      _currentStepIndex == 1) {
+                                    _startCompression();
+                                  } else if (_isMergePdf &&
+                                      _currentStepIndex == 1) {
+                                    _startMerge();
+                                  } else if (_isSplitPdf &&
+                                      _currentStepIndex == 1) {
+                                    _promptOrStartSplit();
+                                  } else {
+                                    setState(() {
+                                      _currentStepIndex++;
+                                      if (_isSplitPdf &&
+                                          _currentStepIndex == 1 &&
+                                          _selectedFiles.isNotEmpty) {
+                                        _inspectAndInitSplit(
+                                          _selectedFiles.first,
+                                        );
+                                      }
+                                    });
+                                  }
                                 }
-                              }
-                            : null,
-                        child: Text(
-                          _isImageConvert && _currentStepIndex == 1
-                              ? 'Convert to $_targetFormat'
-                              : _isCompressPdf && _currentStepIndex == 1
-                              ? 'Compress PDF'
-                              : _isMergePdf && _currentStepIndex == 1
-                              ? 'Merge PDF'
-                              : _isSplitPdf && _currentStepIndex == 1
-                              ? 'Split PDF'
-                              : 'Next step',
+                              : null,
+                          child: Text(
+                            _isImageConvert && _currentStepIndex == 1
+                                ? 'Convert to $_targetFormat'
+                                : _isCompressPdf && _currentStepIndex == 1
+                                ? 'Compress PDF'
+                                : _isMergePdf && _currentStepIndex == 1
+                                ? 'Merge PDF'
+                                : _isSplitPdf && _currentStepIndex == 1
+                                ? 'Split PDF'
+                                : 'Next step',
+                          ),
+                        )
+                      else
+                        ElevatedButton(
+                          onPressed: _resetFlow,
+                          child: Text(
+                            _isCompressPdf
+                                ? 'Compress another'
+                                : _isMergePdf
+                                ? 'Merge another'
+                                : _isSplitPdf
+                                ? 'Split another'
+                                : 'Convert another',
+                          ),
                         ),
-                      )
-                    else
-                      ElevatedButton(
-                        onPressed: _resetFlow,
-                        child: Text(
-                          _isCompressPdf
-                              ? 'Compress another'
-                              : _isMergePdf
-                              ? 'Merge another'
-                              : _isSplitPdf
-                              ? 'Split another'
-                              : 'Convert another',
-                        ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -2941,8 +2976,12 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
   // --- Compress PDF Specific Steps ---
 
   String _getQualityDescriptor(int q) {
-    if (q <= 40) return '(Smallest Size)';
-    if (q <= 70) return '(Balanced)';
+    if (q <= 40) {
+      return '(Smallest Size)';
+    }
+    if (q <= 70) {
+      return '(Balanced)';
+    }
     return '(High Quality)';
   }
 
@@ -4037,7 +4076,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1F1F1F) : const Color(0xFFF0F0F0),
+                color: isDark
+                    ? const Color(0xFF1F1F1F)
+                    : const Color(0xFFF0F0F0),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Row(
@@ -4154,8 +4195,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                 color: !_splitValidation.isValid
                     ? Colors.red.shade400
                     : (_splitValidation.hasSignificantGap
-                        ? Colors.amber.shade600
-                        : borderColor),
+                          ? Colors.amber.shade600
+                          : borderColor),
                 width: 1,
               ),
               borderRadius: BorderRadius.circular(8),
@@ -4169,14 +4210,14 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                       !_splitValidation.isValid
                           ? Icons.error_outline
                           : (_splitValidation.hasSignificantGap
-                              ? Icons.warning_amber_rounded
-                              : Icons.preview_outlined),
+                                ? Icons.warning_amber_rounded
+                                : Icons.preview_outlined),
                       size: 20,
                       color: !_splitValidation.isValid
                           ? Colors.red
                           : (_splitValidation.hasSignificantGap
-                              ? Colors.amber.shade700
-                              : const Color(0xFF007AFF)),
+                                ? Colors.amber.shade700
+                                : const Color(0xFF007AFF)),
                     ),
                     const SizedBox(width: 8),
                     const Text(
@@ -4194,7 +4235,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF007AFF).withValues(alpha: 0.15),
+                          color: const Color(
+                            0xFF007AFF,
+                          ).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -4474,8 +4517,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     }
 
     final fileCount = res.outputFiles.length;
-    final fileCountText =
-        fileCount == 1 ? '1 PDF file' : '$fileCount PDF files';
+    final fileCountText = fileCount == 1
+        ? '1 PDF file'
+        : '$fileCount PDF files';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4685,15 +4729,17 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                       ? null
                       : _handleSaveAllSplitPdfs,
                   icon: Icon(
-                    _isSplitSavedToFiles ? Icons.check : Icons.save_alt_outlined,
+                    _isSplitSavedToFiles
+                        ? Icons.check
+                        : Icons.save_alt_outlined,
                     size: 16,
                   ),
                   label: Text(
                     _isSavingSplitPdf
                         ? 'Saving...'
                         : (_isSplitSavedToFiles
-                            ? 'Saved All'
-                            : 'Save All to Files'),
+                              ? 'Saved All'
+                              : 'Save All to Files'),
                   ),
                 ),
               ),
@@ -4707,10 +4753,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: _resetFlow,
-                child: const Text('Done'),
-              ),
+              OutlinedButton(onPressed: _resetFlow, child: const Text('Done')),
             ],
           ),
         ),

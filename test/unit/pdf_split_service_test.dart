@@ -221,47 +221,60 @@ void main() {
       }
     });
 
-    test('splits PDF using custom ranges and verifies output integrity', () async {
-      final pdf = await _createTestPdf(tempDir, 'sample.pdf', pageCount: 8);
-      const service = PdfSplitService();
+    test(
+      'splits PDF using custom ranges and verifies output integrity',
+      () async {
+        final pdf = await _createTestPdf(tempDir, 'sample.pdf', pageCount: 8);
+        const service = PdfSplitService();
 
-      final validation = SplitRangeValidator.validate(
-        mode: SplitMode.customRanges,
-        totalPages: 8,
-        customRangesInput: '1-3, 5, 7-8',
-        prefix: 'custom_split',
-      );
+        final validation = SplitRangeValidator.validate(
+          mode: SplitMode.customRanges,
+          totalPages: 8,
+          customRangesInput: '1-3, 5, 7-8',
+          prefix: 'custom_split',
+        );
 
-      final stages = <String>[];
-      final result = await service.splitPdf(
-        inputPath: pdf.path,
-        groups: validation.groups,
-        outputDirectory: tempDir.path,
-        onProgress: (stage, _) => stages.add(stage),
-      );
+        final stages = <String>[];
+        final result = await service.splitPdf(
+          inputPath: pdf.path,
+          groups: validation.groups,
+          outputDirectory: tempDir.path,
+          onProgress: (stage, _) => stages.add(stage),
+        );
 
-      expect(result.files.length, equals(3));
-      expect(result.totalSourcePages, equals(8));
-      expect(stages.isNotEmpty, isTrue);
+        expect(result.files.length, equals(3));
+        expect(result.totalSourcePages, equals(8));
+        expect(stages.isNotEmpty, isTrue);
 
-      // Part 1: pages 1-3
-      final doc1 = sf.PdfDocument(inputBytes: File(result.files[0].outputPath).readAsBytesSync());
-      expect(doc1.pages.count, equals(3));
-      doc1.dispose();
+        // Part 1: pages 1-3
+        final doc1 = sf.PdfDocument(
+          inputBytes: File(result.files[0].outputPath).readAsBytesSync(),
+        );
+        expect(doc1.pages.count, equals(3));
+        doc1.dispose();
 
-      // Part 2: page 5
-      final doc2 = sf.PdfDocument(inputBytes: File(result.files[1].outputPath).readAsBytesSync());
-      expect(doc2.pages.count, equals(1));
-      doc2.dispose();
+        // Part 2: page 5
+        final doc2 = sf.PdfDocument(
+          inputBytes: File(result.files[1].outputPath).readAsBytesSync(),
+        );
+        expect(doc2.pages.count, equals(1));
+        doc2.dispose();
 
-      // Part 3: pages 7-8
-      final doc3 = sf.PdfDocument(inputBytes: File(result.files[2].outputPath).readAsBytesSync());
-      expect(doc3.pages.count, equals(2));
-      doc3.dispose();
-    });
+        // Part 3: pages 7-8
+        final doc3 = sf.PdfDocument(
+          inputBytes: File(result.files[2].outputPath).readAsBytesSync(),
+        );
+        expect(doc3.pages.count, equals(2));
+        doc3.dispose();
+      },
+    );
 
     test('inspectPdf correctly identifies pages and encryption', () async {
-      final unencrypted = await _createTestPdf(tempDir, 'plain.pdf', pageCount: 4);
+      final unencrypted = await _createTestPdf(
+        tempDir,
+        'plain.pdf',
+        pageCount: 4,
+      );
       final encrypted = await _createTestPdf(
         tempDir,
         'secret.pdf',
