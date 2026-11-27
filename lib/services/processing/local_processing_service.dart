@@ -31,9 +31,15 @@ class LocalProcessingService implements ProcessingService {
           return ScannedPage(id: 'page_${e.key}', originalPath: e.value);
         }).toList();
 
+        final baseName =
+            (request.outputFileName != null &&
+                request.outputFileName!.trim().isNotEmpty)
+            ? request.outputFileName!.trim()
+            : 'images_${DateTime.now().millisecondsSinceEpoch}';
+
         final outputPath = await compilePagesToPdf(
           pages: pages,
-          outputFileName: 'output.pdf',
+          outputFileName: baseName,
         );
 
         return Success(
