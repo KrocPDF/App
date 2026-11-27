@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- On-device Split PDF engine (`PdfSplitService`) with 4 splitting modes (custom page ranges, every N pages, extract all pages, split into N parts), memory-safe isolate execution, page boundary/gap validation, and complete `ToolFlowScreen` integration (#23, #40).
 - On-device two-PDF merge engine (`PdfMergeService`) using `syncfusion_flutter_pdf` inside `Isolate.run()` with unified 1-or-2-file password prompt (`showPdfPasswordDialog`) and full `ToolFlowScreen` integration (#22).
 - Branded launch animation sequence (`LaunchAnimationScreen` and `LaunchGate`) featuring paper drop, conversion to PDF document, crocodile bite interaction, carrier motion, and trail reveal into the KrocPDF wordmark.
 - Wall-clock monotonic `Stopwatch` + `Ticker` timing engine ensuring a consistent 4.2-second launch pacing across all display refresh rates (60Hz, 90Hz, 120Hz).
