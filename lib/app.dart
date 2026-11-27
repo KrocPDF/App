@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'core/demo/demo_guard.dart';
 import 'core/theme/app_theme.dart';
+import 'features/demo/presentation/expired_screen.dart';
 import 'features/files/presentation/files_screen.dart';
 import 'features/files/presentation/pdf_viewer_screen.dart';
 import 'features/home/presentation/home_screen.dart';
@@ -109,20 +111,60 @@ final GoRouter _router = GoRouter(
   ],
 );
 
-class KrocApp extends StatelessWidget {
+class KrocApp extends StatefulWidget {
   const KrocApp({super.key});
 
   @override
+  State<KrocApp> createState() => _KrocAppState();
+}
+
+class _KrocAppState extends State<KrocApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      DemoGuard.isExpired();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'KrocPDF',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      routerConfig: _router,
-      builder: (context, child) {
-        return LaunchGate(child: child ?? const SizedBox.shrink());
+    return ValueListenableBuilder<bool>(
+      valueListenable: DemoGuard.expiredNotifier,
+      builder: (context, isExpired, _) {
+        if (isExpired) {
+          return MaterialApp(
+            title: 'KrocPDF',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.system,
+            home: const ExpiredScreen(),
+          );
+        }
+
+        return MaterialApp.router(
+          title: 'KrocPDF',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.system,
+          routerConfig: _router,
+          builder: (context, child) {
+            return LaunchGate(child: child ?? const SizedBox.shrink());
+          },
+        );
       },
     );
   }

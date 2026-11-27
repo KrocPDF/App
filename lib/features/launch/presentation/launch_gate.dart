@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/demo/demo_guard.dart';
 import 'launch_animation_screen.dart';
 
 /// Gate widget that sits above the app router.
@@ -33,7 +34,8 @@ class _LaunchGateState extends State<LaunchGate> {
   @override
   void initState() {
     super.initState();
-    _showLaunchScreen = !LaunchGate.hasCompletedLaunch;
+    _showLaunchScreen =
+        !LaunchGate.hasCompletedLaunch && !DemoGuard.isExpiredCached;
   }
 
   void _onLaunchComplete() {
