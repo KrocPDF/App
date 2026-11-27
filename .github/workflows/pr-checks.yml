@@ -40,8 +40,19 @@ jobs:
             exit 0
           fi
 
-          # Check if CHANGELOG.md has added lines under ## [Unreleased]
-          if git diff origin/${{ github.base_ref }}...HEAD -- CHANGELOG.md | grep -A 20 -m 1 "^[ +]## \[Unreleased\]" | grep -q "^+[^+]"; then
+          # Compare the Unreleased sections so added files and modified files are both detected.
+          unreleased_entries() {
+            awk '
+              /^## \[Unreleased\]/ { in_unreleased = 1; next }
+              /^## / && in_unreleased { exit }
+              in_unreleased { print }
+            '
+          }
+          BASE_CHANGELOG=$(git show "origin/${{ github.base_ref }}:CHANGELOG.md" 2>/dev/null || true)
+          CHANGELOG_DIFF=$(diff -u \
+            <(printf '%s\n' "$BASE_CHANGELOG" | unreleased_entries) \
+            <(unreleased_entries < CHANGELOG.md) || true)
+          if printf '%s\n' "$CHANGELOG_DIFF" | grep -E '^\+[^+]' >/dev/null; then
             echo "✅ CHANGELOG.md has new entries added under [Unreleased]."
             exit 0
           fi

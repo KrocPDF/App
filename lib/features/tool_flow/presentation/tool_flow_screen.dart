@@ -16,6 +16,8 @@ import '../../../services/image_conversion_service.dart';
 import '../../../services/pdf_compression_service.dart';
 import '../../../services/pdf_merge_service.dart';
 import '../../../services/pdf_split_service.dart';
+import '../../../services/processing/local_processing_service.dart';
+import '../../../services/processing/processing_service.dart';
 import '../../files/data/files_repository.dart';
 import '../../files/domain/saved_document.dart';
 import '../../home/domain/tool_item.dart';
@@ -112,6 +114,18 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
   bool _isSplitSavedToFiles = false;
   bool _isSavingSplitPdf = false;
 
+  // Image to PDF state
+  final TextEditingController _imageToPdfNameController = TextEditingController(
+    text: 'images_to_pdf',
+  );
+  bool _isCreatingPdfFromImages = false;
+  String? _imageToPdfError;
+  String? _imageToPdfOutputPath;
+  int _imageToPdfFileSizeBytes = 0;
+  int _imageToPdfPageCount = 0;
+  bool _isImageToPdfSavedToFiles = false;
+  bool _isSavingImageToPdf = false;
+
   // Multi-tool files state
   final List<File> _selectedFiles = [];
 
@@ -122,6 +136,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     _splitRangesController.dispose();
     _splitEveryNController.dispose();
     _splitPartsController.dispose();
+    _imageToPdfNameController.dispose();
     super.dispose();
   }
 
@@ -169,6 +184,7 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
   bool get _isCompressPdf => widget.toolId == 'compress_pdf';
   bool get _isMergePdf => widget.toolId == 'merge_pdf';
   bool get _isSplitPdf => widget.toolId == 'split_pdf';
+  bool get _isImageToPdf => widget.toolId == 'image_to_pdf';
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -923,6 +939,15 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       _isSplitSavedToFiles = false;
       _isSavingSplitPdf = false;
 
+      _imageToPdfNameController.text = 'images_to_pdf';
+      _isCreatingPdfFromImages = false;
+      _imageToPdfError = null;
+      _imageToPdfOutputPath = null;
+      _imageToPdfFileSizeBytes = 0;
+      _imageToPdfPageCount = 0;
+      _isImageToPdfSavedToFiles = false;
+      _isSavingImageToPdf = false;
+
       _selectedFiles.clear();
     });
   }
@@ -1385,6 +1410,12 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
       canGoNext =
           (_currentStepIndex == 0 && _selectedFiles.isNotEmpty) ||
           (_currentStepIndex == 1 && _splitValidation.isValid && !_isSplitting);
+    } else if (_isImageToPdf) {
+      canGoNext =
+          (_currentStepIndex == 0 && _selectedFiles.isNotEmpty) ||
+          (_currentStepIndex == 1 &&
+              _selectedFiles.isNotEmpty &&
+              !_isCreatingPdfFromImages);
     } else if (widget.toolId == 'office_to_pdf') {
       // Office to PDF is UI scaffolding only in this phase
       canGoNext = false;
@@ -1427,7 +1458,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                           if (_isConverting ||
                               _isCompressing ||
                               _isMerging ||
-                              _isSplitting) {
+                              _isSplitting ||
+                              _isCreatingPdfFromImages) {
                             return;
                           }
                           if (_isImageConvert) {
@@ -1478,6 +1510,19 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                                 _splitValidation.isValid) {
                               _promptOrStartSplit();
                             } else if (index == 3 && _splitResult != null) {
+                              setState(() => _currentStepIndex = index);
+                            }
+                          } else if (_isImageToPdf) {
+                            if (index == 0) {
+                              setState(() => _currentStepIndex = index);
+                            } else if (index == 1 &&
+                                _selectedFiles.isNotEmpty) {
+                              setState(() => _currentStepIndex = index);
+                            } else if (index == 2 &&
+                                _selectedFiles.isNotEmpty) {
+                              _startImageToPdf();
+                            } else if (index == 3 &&
+                                _imageToPdfOutputPath != null) {
                               setState(() => _currentStepIndex = index);
                             }
                           } else {
@@ -1556,7 +1601,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                           !_isConverting &&
                           !_isCompressing &&
                           !_isMerging &&
-                          !_isSplitting)
+                          !_isSplitting &&
+                          !_isCreatingPdfFromImages)
                         OutlinedButton(
                           onPressed: () => setState(() => _currentStepIndex--),
                           child: const Text('Back'),
@@ -1579,6 +1625,9 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                                   } else if (_isSplitPdf &&
                                       _currentStepIndex == 1) {
                                     _promptOrStartSplit();
+                                  } else if (_isImageToPdf &&
+                                      _currentStepIndex == 1) {
+                                    _startImageToPdf();
                                   } else {
                                     setState(() {
                                       _currentStepIndex++;
@@ -1602,6 +1651,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                                 ? 'Merge PDF'
                                 : _isSplitPdf && _currentStepIndex == 1
                                 ? 'Split PDF'
+                                : _isImageToPdf && _currentStepIndex == 1
+                                ? 'Create PDF'
                                 : 'Next step',
                           ),
                         )
@@ -1615,6 +1666,8 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
                                 ? 'Merge another'
                                 : _isSplitPdf
                                 ? 'Split another'
+                                : _isImageToPdf
+                                ? 'Create another'
                                 : 'Convert another',
                           ),
                         ),
@@ -1688,6 +1741,21 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
           return _buildSplitPdfProgressStep(context, borderColor, isDark);
         case 3:
           return _buildSplitPdfResultStep(context, borderColor, isDark);
+        default:
+          return const SizedBox.shrink();
+      }
+    }
+
+    if (_isImageToPdf) {
+      switch (_currentStepIndex) {
+        case 0:
+          return _buildSelectFilesStep(context, borderColor, isDark);
+        case 1:
+          return _buildImageToPdfOptionsStep(context, borderColor, isDark);
+        case 2:
+          return _buildImageToPdfProgressStep(context, borderColor, isDark);
+        case 3:
+          return _buildImageToPdfResultStep(context, borderColor, isDark);
         default:
           return const SizedBox.shrink();
       }
@@ -2823,7 +2891,135 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
     );
   }
 
-  // --- Image to PDF Step 0 ---
+  // --- Image to PDF Steps ---
+
+  Future<void> _startImageToPdf() async {
+    if (_selectedFiles.isEmpty || _isCreatingPdfFromImages) {
+      return;
+    }
+
+    setState(() {
+      _currentStepIndex = 2;
+      _isCreatingPdfFromImages = true;
+      _imageToPdfError = null;
+      _imageToPdfOutputPath = null;
+      _isImageToPdfSavedToFiles = false;
+    });
+
+    try {
+      final rawName = _imageToPdfNameController.text.trim();
+      final baseName = rawName.isNotEmpty
+          ? rawName
+          : 'images_${DateTime.now().millisecondsSinceEpoch}';
+
+      const processor = LocalProcessingService();
+      final result = await processor.process(
+        ProcessingRequest(
+          toolId: 'image_to_pdf',
+          filePaths: _selectedFiles.map((f) => f.path).toList(),
+          outputFileName: baseName,
+        ),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (result is Success<ProcessingResult, AppError>) {
+        final outFile = File(result.data.outputFilePath);
+        final sizeBytes = await outFile.exists() ? await outFile.length() : 0;
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _imageToPdfOutputPath = result.data.outputFilePath;
+          _imageToPdfFileSizeBytes = sizeBytes;
+          _imageToPdfPageCount = _selectedFiles.length;
+          _isCreatingPdfFromImages = false;
+          _currentStepIndex = 3;
+        });
+      } else if (result is Failure<ProcessingResult, AppError>) {
+        setState(() {
+          _imageToPdfError = result.error.message;
+          _isCreatingPdfFromImages = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _imageToPdfError = e.toString();
+          _isCreatingPdfFromImages = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleSaveImageToPdf() async {
+    if (_imageToPdfOutputPath == null ||
+        _isImageToPdfSavedToFiles ||
+        _isSavingImageToPdf) {
+      return;
+    }
+    final file = File(_imageToPdfOutputPath!);
+    if (!await file.exists()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Generated PDF not found on disk.')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isSavingImageToPdf = true);
+    try {
+      final fileName = file.uri.pathSegments.last;
+      await ref
+          .read(savedFilesProvider.notifier)
+          .addExternalFile(
+            file,
+            customTitle: fileName,
+            sourceType: SavedDocumentSource.convert,
+          );
+      if (mounted) {
+        setState(() {
+          _isImageToPdfSavedToFiles = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Saved "$fileName" to Saved Documents.'),
+            backgroundColor: Colors.green.shade700,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save PDF: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingImageToPdf = false);
+      }
+    }
+  }
+
+  Future<void> _handleShareImageToPdf() async {
+    if (_imageToPdfOutputPath == null) {
+      return;
+    }
+    final file = File(_imageToPdfOutputPath!);
+    if (!await file.exists()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Generated PDF not found on disk.')),
+        );
+      }
+      return;
+    }
+    // ignore: deprecated_member_use
+    await Share.shareXFiles([XFile(_imageToPdfOutputPath!)]);
+  }
 
   Widget _buildImageToPdfSelectStep(
     BuildContext context,
@@ -2881,6 +3077,331 @@ class _ToolFlowScreenState extends ConsumerState<ToolFlowScreen> {
               ),
               icon: const Icon(Icons.folder_open_outlined, size: 18),
               label: const Text('Browse Storage'),
+            ),
+          ],
+        ),
+        if (_selectedFiles.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF141414) : const Color(0xFFFAFAFA),
+              border: Border.all(color: borderColor, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${_selectedFiles.length} ${_selectedFiles.length == 1 ? 'image' : 'images'} selected',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => _selectedFiles.clear()),
+                      child: const Text('Clear all'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...List.generate(_selectedFiles.length, (idx) {
+                  final file = _selectedFiles[idx];
+                  final name = file.uri.pathSegments.isNotEmpty
+                      ? file.uri.pathSegments.last
+                      : file.path;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        Text(
+                          '${idx + 1}.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white60 : Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 16),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () {
+                            setState(() => _selectedFiles.removeAt(idx));
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildImageToPdfOptionsStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'PDF Output Settings',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '${_selectedFiles.length} ${_selectedFiles.length == 1 ? 'image' : 'images'} will be combined into a single A4 PDF document.',
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.white60 : Colors.black54,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _imageToPdfNameController,
+          decoration: InputDecoration(
+            labelText: 'Output PDF Filename',
+            suffixText: '.pdf',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF161616) : const Color(0xFFF4F4F4),
+            border: Border.all(color: borderColor, width: 0.8),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            'Images are compiled into PDF pages locally on your device (100% confidential).',
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageToPdfProgressStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
+    if (_imageToPdfError != null) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 44, color: Colors.redAccent),
+          const SizedBox(height: 14),
+          const Text(
+            'PDF Creation Failed',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _imageToPdfError!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              OutlinedButton(
+                onPressed: () => setState(() => _currentStepIndex = 1),
+                child: const Text('Back to options'),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: _startImageToPdf,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        CircularProgressIndicator(
+          color: isDark ? Colors.white : Colors.black,
+          strokeWidth: 2.5,
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Creating PDF from ${_selectedFiles.length} ${_selectedFiles.length == 1 ? 'image' : 'images'}...',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Compiling pages locally on your device.',
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.white60 : Colors.black54,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageToPdfResultStep(
+    BuildContext context,
+    Color borderColor,
+    bool isDark,
+  ) {
+    final outPath = _imageToPdfOutputPath;
+    if (outPath == null) {
+      return const Center(child: Text('No result available.'));
+    }
+
+    final fileName = File(outPath).uri.pathSegments.isNotEmpty
+        ? File(outPath).uri.pathSegments.last
+        : 'output.pdf';
+    final sizeLabel = _imageToPdfFileSizeBytes < 1024
+        ? '$_imageToPdfFileSizeBytes B'
+        : _imageToPdfFileSizeBytes < 1024 * 1024
+        ? '${(_imageToPdfFileSizeBytes / 1024).toStringAsFixed(1)} KB'
+        : '${(_imageToPdfFileSizeBytes / (1024 * 1024)).toStringAsFixed(2)} MB';
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: Colors.green.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.check, size: 30, color: Colors.green),
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          'PDF Created!',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Successfully combined $_imageToPdfPageCount ${_imageToPdfPageCount == 1 ? 'image' : 'images'} into PDF',
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.white60 : Colors.black54,
+          ),
+        ),
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF141414) : const Color(0xFFFAFAFA),
+            border: Border.all(color: borderColor, width: 1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF007AFF).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.picture_as_pdf_outlined,
+                  color: Color(0xFF007AFF),
+                  size: 30,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                fileName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '$_imageToPdfPageCount ${_imageToPdfPageCount == 1 ? 'page' : 'pages'} • $sizeLabel',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDark ? Colors.white60 : Colors.black54,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: 12,
+          runSpacing: 10,
+          alignment: WrapAlignment.center,
+          children: [
+            ElevatedButton.icon(
+              onPressed: _isImageToPdfSavedToFiles || _isSavingImageToPdf
+                  ? null
+                  : _handleSaveImageToPdf,
+              icon: Icon(
+                _isImageToPdfSavedToFiles
+                    ? Icons.check
+                    : Icons.download_outlined,
+                size: 18,
+              ),
+              label: Text(
+                _isSavingImageToPdf
+                    ? 'Saving...'
+                    : (_isImageToPdfSavedToFiles
+                          ? 'Saved to Files'
+                          : 'Save to Files'),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                final encodedPath = Uri.encodeComponent(outPath);
+                final encodedTitle = Uri.encodeComponent(fileName);
+                context.push(
+                  '/pdf-viewer?path=$encodedPath&title=$encodedTitle',
+                );
+              },
+              icon: const Icon(Icons.visibility_outlined, size: 18),
+              label: const Text('View PDF'),
+            ),
+            ElevatedButton.icon(
+              onPressed: _handleShareImageToPdf,
+              icon: const Icon(Icons.share_outlined, size: 18),
+              label: const Text('Share PDF'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _resetFlow,
+              icon: const Icon(Icons.refresh_outlined, size: 18),
+              label: const Text('Create Another'),
             ),
           ],
         ),
