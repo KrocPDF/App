@@ -41,7 +41,7 @@ jobs:
           fi
 
           # Check if CHANGELOG.md has added lines under ## [Unreleased]
-          if git diff origin/${{ github.base_ref }}...HEAD -- CHANGELOG.md | grep -A 20 -m 1 "^## \[Unreleased\]" | grep -q "^+[^+]"; then
+          if git diff origin/${{ github.base_ref }}...HEAD -- CHANGELOG.md | grep -A 20 -m 1 "^[ +]## \[Unreleased\]" | grep -q "^+[^+]"; then
             echo "✅ CHANGELOG.md has new entries added under [Unreleased]."
             exit 0
           fi
